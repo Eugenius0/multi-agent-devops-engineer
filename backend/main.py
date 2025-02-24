@@ -26,8 +26,15 @@ async def run_automation(request: UserRequest):
     # Query the LLM to determine which automation to run
     response = ollama.chat(
         model=MODEL_NAME,
-        messages=[{"role": "user", "content": f"Analyze this request and decide which automation to run: {user_input}. Options: 'GitHub Actions', 'Docker', 'GitHub Actions and Docker'. Only return the exact option."}]
+        messages=[{"role": "user", "content": f"""
+            You are an AI assistant. Your task is to extract the correct automation type from a user request. 
+            Options are: 'GitHub Actions', 'Docker', 'GitHub Actions and Docker'. 
+            Do NOT provide any explanation—ONLY return one of these exact options.
+        
+            User request: {user_input}
+        """}]
     )
+
 
     # Clean the response to remove extra quotes
     try:

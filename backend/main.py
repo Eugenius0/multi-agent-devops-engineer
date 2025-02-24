@@ -1,8 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import ollama
-import subprocess
 import uuid
+from services.executor import run_script  # Import executor to run scripts
 
 app = FastAPI()
 
@@ -22,12 +21,15 @@ async def interpret_request(request: UserRequest):
     if not user_input:
         raise HTTPException(status_code=400, detail="No user input provided")
 
-    response = ollama.chat(
-        model="deepseek-coder-v2",
-        messages=[{"role": "user", "content": f"Interpret this automation request: {user_input}"}]
-    )
-
-    interpreted_intent = response['message']['content']
+    # Simulate LLM intent recognition (Still needs to be replaced with actual LLM call)
+    if "GitHub Actions" in user_input:
+        interpreted_intent = "GitHub Actions"
+    elif "Docker" in user_input:
+        interpreted_intent = "Docker"
+    elif "GitHub Actions" in user_input and "Docker" in user_input:
+        interpreted_intent = "GitHub Actions and Docker"
+    else:
+        interpreted_intent = "Unknown"
 
     return {"intent": interpreted_intent}
 
@@ -41,20 +43,19 @@ async def run_automation(request: AutomationRequest):
     task_id = str(uuid.uuid4())
     task_status[task_id] = "Running"
 
-    if "GitHub Actions" in intent:
-        script = "setup_github_actions.py"
+    # Determine which automation to execute
+    if "GitHub Actions" in intent and "Docker" in intent:
+        output = run_script("setup_github_actions.py") + "\n" + run_script("dockerize_app.py")
+    elif "GitHub Actions" in intent:
+        output = run_script("setup_github_actions.py")
     elif "Docker" in intent:
-        script = "dockerize_app.py"
-    elif "GitHub Actions" in intent and "Docker" in intent:
-        script = "setup_github_and_docker.py"
+        output = run_script("dockerize_app.py")
     else:
         raise HTTPException(status_code=400, detail="Unknown intent")
 
-    process = subprocess.Popen(["python", script], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
     task_status[task_id] = "Completed"
 
-    return {"task_id": task_id, "status": "Started", "script": script}
+    return {"task_id": task_id, "status": "Completed", "output": output}
 
 @app.get("/get-status/{task_id}")
 async def get_status(task_id: str):

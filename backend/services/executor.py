@@ -2,15 +2,16 @@ import subprocess
 import os
 from pathlib import Path
 
-# Path to automation scripts
-SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "automation_scripts"
+# Get the absolute path of the project root
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+SCRIPTS_DIR = BASE_DIR / "automation_scripts"
 
 def run_script(script_name):
     """Runs an automation script and returns its output."""
     script_path = SCRIPTS_DIR / script_name
 
     if not script_path.exists():
-        return f"Error: Script {script_name} not found."
+        return f"Error: Script {script_name} not found at {script_path}"
 
     try:
         process = subprocess.Popen(

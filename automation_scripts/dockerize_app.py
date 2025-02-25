@@ -4,9 +4,17 @@ import git
 import re
 
 
-# GitHub Credentials (replace with your own)
+def get_github_username():
+    """Fetch the GitHub username from the global Git config."""
+    try:
+        result = subprocess.run(["git", "config", "--global", "user.name"], capture_output=True, text=True)
+        return result.stdout.strip() if result.returncode == 0 else None
+    except Exception:
+        return None
+
+# GitHub Credentials
 GITHUB_TOKEN = "your-github-token"
-GITHUB_USER = "your-github-username"
+GITHUB_USER = get_github_username() or input("Enter your GitHub username: ").strip()
 
 MODEL_NAME = "deepseek-coder-v2" # change to prefered model
 

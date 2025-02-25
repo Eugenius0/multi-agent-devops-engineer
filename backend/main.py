@@ -4,8 +4,18 @@ import ollama
 import uuid
 import ast
 from services.executor import run_script
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Enable CORS to allow frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow requests from any frontend (can get restricted later)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (POST, GET, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 
 MODEL_NAME = "deepseek-coder-v2"  # Change to preferred model
 

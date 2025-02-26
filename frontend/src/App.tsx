@@ -5,9 +5,25 @@ import { useMutation } from "@tanstack/react-query";
 export default function AutomationFrameworkUI() {
   const [command, setCommand] = useState("");
   const [repoName, setRepoName] = useState("");
+  const [executionStatus, setExecutionStatus] = useState(""); // Keep execution status visible
   const [logs, setLogs] = useState<
-    { taskId: string; status: string; output: string }[]
+    {
+      taskId: string;
+      status: string;
+      executedTask: string;
+      timestamp: string;
+    }[]
   >([]);
+
+  // Function to determine executed task name
+  const getExecutedTaskName = (rawOutput: string) => {
+    if (rawOutput.includes("GitHub Actions pipeline")) {
+      return "Creation of GitHub Actions pipeline";
+    } else if (rawOutput.includes("Docker containerization")) {
+      return "Containerization of your app with Docker";
+    }
+    return "Executed your indicated automation task"; // Fallback if unknown
+  };
 
   // Send command and repoName to FastAPI backend and stream logs
   const mutation = useMutation({
@@ -21,10 +37,7 @@ export default function AutomationFrameworkUI() {
       if (!response.ok) throw new Error("Failed to execute automation");
 
       const taskId = crypto.randomUUID(); // Generate a task ID for tracking
-      setLogs((prevLogs) => [
-        { taskId, status: "Running", output: "" },
-        ...prevLogs,
-      ]);
+      setExecutionStatus(""); // Clear previous status
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error("No response stream available");
@@ -38,25 +51,32 @@ export default function AutomationFrameworkUI() {
 
         newOutput += decoder.decode(value, { stream: true });
 
-        // eslint-disable-next-line no-loop-func
-        setLogs((prevLogs) =>
-          prevLogs.map((log) =>
-            log.taskId === taskId
-              ? { ...log, output: newOutput, status: "Running" }
-              : log
-          )
-        );
+        setExecutionStatus(newOutput); // Keep live execution logs visible
       }
 
-      setLogs((prevLogs) =>
-        prevLogs.map((log) =>
-          log.taskId === taskId ? { ...log, status: "Completed" } : log
-        )
-      );
+      // Extract readable task name
+      const executedTask = getExecutedTaskName(newOutput);
+
+      // Store completed execution in history
+      setLogs((prevLogs) => [
+        {
+          taskId,
+          status: `Completed ${executedTask}`,
+          executedTask,
+          timestamp: new Date().toLocaleString(), // Save timestamp
+        },
+        ...prevLogs,
+      ]);
     },
     onError: (error) => {
+      setExecutionStatus("Error occurred during execution.");
       setLogs((prevLogs) => [
-        { taskId: "N/A", status: "Error", output: error.message },
+        {
+          taskId: "N/A",
+          status: "Error",
+          executedTask: "N/A",
+          timestamp: new Date().toLocaleString(),
+        },
         ...prevLogs,
       ]);
     },
@@ -92,7 +112,17 @@ export default function AutomationFrameworkUI() {
           {mutation.isPending ? "Processing..." : "Execute"}
         </Button>
 
-        {/* Execution Logs */}
+        {/* Execution Status (Live & Persistent) */}
+        {executionStatus && (
+          <div className="mt-6 p-3 bg-blue-100 border border-blue-300 rounded-lg shadow-sm">
+            <h3 className="text-lg font-semibold">Execution Status</h3>
+            <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+              {executionStatus}
+            </pre>
+          </div>
+        )}
+
+        {/* Execution History */}
         <div className="mt-6">
           <h3 className="text-lg font-semibold mb-2">Execution History</h3>
           {logs.length === 0 ? (
@@ -104,10 +134,8 @@ export default function AutomationFrameworkUI() {
                   key={log.taskId}
                   className="p-3 bg-gray-100 border border-gray-300 rounded-lg shadow-sm"
                 >
+                  <p className="text-sm text-gray-600">{log.timestamp}</p>
                   <p className="font-semibold">{log.status}</p>
-                  <pre className="text-xs text-gray-500 whitespace-pre-wrap">
-                    {log.output}
-                  </pre>
                 </div>
               ))}
             </div>

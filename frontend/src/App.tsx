@@ -83,8 +83,8 @@ export default function AutomationFrameworkUI() {
   });
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-300 p-6">
-      <div className="w-full max-w-lg bg-white shadow-lg rounded-lg p-6">
+    <div className="flex min-h-screen items-center justify-center bg-gray-300 p-6">
+      <div className="w-full max-w-lg h-full bg-white shadow-lg rounded-lg p-6 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">Automation Framework</h2>
 
         {/* Input Fields */}
@@ -114,7 +114,7 @@ export default function AutomationFrameworkUI() {
 
         {/* Execution Status (Live & Persistent) */}
         {executionStatus && (
-          <div className="mt-6 p-3 bg-blue-100 border border-blue-300 rounded-lg shadow-sm">
+          <div className="mt-6 p-3 bg-blue-100 border border-blue-300 rounded-lg shadow-sm max-h-60 overflow-y-auto ">
             <h3 className="text-lg font-semibold">Execution Status</h3>
             <pre className="text-xs text-gray-700 whitespace-pre-wrap">
               {executionStatus}
@@ -123,7 +123,7 @@ export default function AutomationFrameworkUI() {
         )}
 
         {/* Execution History */}
-        <div className="mt-6">
+        <div className="mt-6 max-h-60 overflow-y-auto">
           <h3 className="text-lg font-semibold mb-2">Execution History</h3>
           {logs.length === 0 ? (
             <p className="text-gray-500">No executions yet.</p>

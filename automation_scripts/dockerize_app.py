@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import git
 import re
 
@@ -246,7 +247,8 @@ def main():
     print("🚀 Automating React app containerization with DeepSeek Coder v2 via Ollama...")
 
     # Get the GitHub repository name from the user
-    repo_name = input("Enter the GitHub repository name: ")
+    repo_name = sys.argv[1]
+    print(f"📂 Processing repository: {repo_name}")
     
     print("\n🚀 Cloning repository...")
     clone_repo(repo_name)

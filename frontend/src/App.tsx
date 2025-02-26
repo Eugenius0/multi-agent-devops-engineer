@@ -4,17 +4,18 @@ import { useMutation } from "@tanstack/react-query";
 
 export default function AutomationFrameworkUI() {
   const [command, setCommand] = useState("");
+  const [repoName, setRepoName] = useState("");
   const [logs, setLogs] = useState<
     { taskId: string; status: string; executedTask: string; output: string }[]
   >([]);
 
-  // Send command to FastAPI backend
+  // Send command and repoName to FastAPI backend
   const mutation = useMutation({
-    mutationFn: async (cmd: string) => {
+    mutationFn: async ({ cmd, repo }: { cmd: string; repo: string }) => {
       const response = await fetch("http://localhost:8000/run-automation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_input: cmd }),
+        body: JSON.stringify({ user_input: cmd, repo_name: repo }),
       });
 
       if (!response.ok) throw new Error("Failed to execute automation");
@@ -31,6 +32,7 @@ export default function AutomationFrameworkUI() {
         ...prevLogs,
       ]);
       setCommand(""); // Clear input after execution
+      setRepoName(""); // Clear repo name after execution
     },
     onError: (error) => {
       setLogs((prevLogs) => [
@@ -50,7 +52,7 @@ export default function AutomationFrameworkUI() {
       <div className="w-full max-w-lg bg-white shadow-lg rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-4">Automation Framework</h2>
 
-        {/* Input Field using Headless UI */}
+        {/* Input Fields */}
         <Input
           type="text"
           className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-gray-500"
@@ -58,12 +60,19 @@ export default function AutomationFrameworkUI() {
           value={command}
           onChange={(e) => setCommand(e.target.value)}
         />
+        <Input
+          type="text"
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-gray-500 mt-2"
+          placeholder="Enter your GitHub repository name"
+          value={repoName}
+          onChange={(e) => setRepoName(e.target.value)}
+        />
 
-        {/* Execute Button using Headless UI */}
+        {/* Execute Button */}
         <Button
           className="w-full bg-black text-white px-4 py-2 rounded mt-4 hover:bg-gray-800 focus:ring focus:ring-gray-500 disabled:bg-gray-400"
-          onClick={() => mutation.mutate(command)}
-          disabled={!command.trim() || mutation.isPending}
+          onClick={() => mutation.mutate({ cmd: command, repo: repoName })}
+          disabled={!command.trim() || !repoName.trim() || mutation.isPending}
         >
           {mutation.isPending ? "Processing..." : "Execute"}
         </Button>

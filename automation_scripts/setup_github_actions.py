@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import git
 import re
 
@@ -224,7 +225,9 @@ def trigger_workflow(repo_name):
 
 if __name__ == "__main__":
     print("🚀 Automating GitHub Actions pipeline creation with DeepSeek Coder v2 via Ollama...")
-    repo_name = input("Enter your GitHub repository name: ")
+    
+    repo_name = sys.argv[1]
+    print(f"📂 Processing repository: {repo_name}")
 
     print("\n🚀 Cloning repository...")
     clone_repo(repo_name)

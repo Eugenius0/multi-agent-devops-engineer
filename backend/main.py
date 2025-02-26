@@ -24,16 +24,17 @@ task_status = {}
 
 class UserRequest(BaseModel):
     user_input: str
+    repo_name: str  # Added field for repository name
 
 @app.post("/run-automation")
 async def run_automation(request: UserRequest):
     """Uses DeepSeek Coder v2 to determine which automation to run."""
     user_input = request.user_input
+    repo_name = request.repo_name.strip()
 
-    if not user_input:
-        raise HTTPException(status_code=400, detail="No user input provided")
+    if not user_input or not repo_name:
+        raise HTTPException(status_code=400, detail="User input and repo name are required")
 
-    # Query the LLM to determine which automation to run
     response = ollama.chat(
         model=MODEL_NAME,
         messages=[{"role": "user", "content": f"""
@@ -45,48 +46,24 @@ async def run_automation(request: UserRequest):
         """}]
     )
 
-
-    # Clean the response to remove extra quotes
     try:
         intent = ast.literal_eval(response['message']['content'].strip())
     except (SyntaxError, ValueError):
         intent = response['message']['content'].strip()
 
-    # Ensure intent is a string
-    intent = intent if isinstance(intent, str) else str(intent)
-
-    # Validate the intent returned by LLM
     if intent not in ["GitHub Actions", "Docker", "GitHub Actions and Docker"]:
         return {"error": "LLM returned an unrecognized intent.", "llm_output": intent}
 
-    # Generate a unique task ID
     task_id = str(uuid.uuid4())
     task_status[task_id] = "Running"
 
-    # Execute the appropriate automation script based on LLM decision
     if intent == "GitHub Actions":
-        output = run_script("setup_github_actions.py")
+        output = run_script("setup_github_actions.py", repo_name)
     elif intent == "Docker":
-        output = run_script("dockerize_app.py")
+        output = run_script("dockerize_app.py", repo_name)
     elif intent == "GitHub Actions and Docker":
-        output = run_script("setup_github_actions.py") + "\n" + run_script("dockerize_app.py")
+        output = run_script("setup_github_actions.py", repo_name) + "\n" + run_script("dockerize_app.py", repo_name)
 
     task_status[task_id] = "Completed"
 
     return {"task_id": task_id, "status": "Completed", "executed_task": intent, "output": output}
-
-@app.get("/get-status/{task_id}")
-async def get_status(task_id: str):
-    """Returns the status of an automation task."""
-    status = task_status.get(task_id, "Not Found")
-    return {"task_id": task_id, "status": status}
-
-@app.get("/get-logs/{task_id}")
-async def get_logs(task_id: str):
-    """Returns logs for the given task ID."""
-    logs = f"Logs for task {task_id}"
-    return {"task_id": task_id, "logs": logs}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

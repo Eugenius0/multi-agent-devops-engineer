@@ -1,8 +1,11 @@
+import logging
 import os
 import subprocess
 import sys
 import git
 import re
+
+logging.basicConfig(format="%(asctime)s%(levelname)s:%(message)s", level=logging.ERROR)
 
 def get_github_username():
     """Fetch the GitHub username from the global Git config."""
@@ -30,7 +33,7 @@ def clone_repo(repo_name):
     repo_path = os.path.join(os.getcwd(), repo_name)
 
     if os.path.isdir(repo_path) and os.path.isdir(os.path.join(repo_path, ".git")):
-        print(f"✅ Repository {repo_name} already exists locally. Skipping clone...")
+        logging.info(f"✅ Repository {repo_name} already exists locally. Skipping clone...") # only logged, not streamed to UI
     else:
         repo_url = f"https://github.com/{GITHUB_USER}/{repo_name}.git"
         print(f"🚀 Cloning repository from {repo_url} ...")
@@ -45,7 +48,7 @@ def setup_workflow_dir(repo_name):
 
 def validate_yaml(repo_name):
     """Runs GitHub Actions validation using `act` and streams the output."""
-    print("\n🔍 Running GitHub Actions validation with `act`...\n")
+    logging.info("\n🔍 Running GitHub Actions validation with `act`...\n")
     
     process = subprocess.Popen(
         f"cd {repo_name} && act -n --container-architecture linux/amd64",
@@ -57,17 +60,17 @@ def validate_yaml(repo_name):
 
     # 🔄 Stream output in real-time
     for line in iter(process.stdout.readline, ""):
-        print(line, end="")  # Print each line as it's received
+        logging.info(line, end="")  # Print each line as it's received
 
     stdout_output, stderr_output = process.communicate()
     return_code = process.returncode
 
     if return_code != 0:
         error_message = stderr_output.strip() or stdout_output.strip()
-        print("\n❌ GitHub Actions validation failed:\n", error_message)
+        logging.error(f"\n❌ GitHub Actions validation failed:\n {error_message}")
         return False, error_message  # Return the actual validation error
 
-    print("\n✅ GitHub Actions workflow is valid!")
+    logging.info("\n✅ GitHub Actions workflow is valid!")
     return True, None
 
 
@@ -91,7 +94,7 @@ def generate_workflow(repo_name, attempt=1, last_error=None, last_yaml=""):
     MAX_RETRIES = 3  # ✅ Increase retry limit for better correction attempts
 
     if attempt > MAX_RETRIES:
-        print("❌ Reached max retries. Keeping last generated YAML.")
+        logging.debug("❌ Reached max retries. Keeping last generated YAML.")
         return last_yaml  # ✅ Return last valid YAML instead of error message
 
     repo_path = f"./{repo_name}"
@@ -127,7 +130,7 @@ def generate_workflow(repo_name, attempt=1, last_error=None, last_yaml=""):
 
     cmd = ["ollama", "run", MODEL_NAME]
 
-    print(f"🧠 Running Ollama to generate workflow (Attempt {attempt}/{MAX_RETRIES})...\n")
+    logging.info(f"🧠 Running Ollama to generate workflow (Attempt {attempt}/{MAX_RETRIES})...\n")
 
     try:
         # Open the subprocess with a pipe for streaming output
@@ -146,10 +149,10 @@ def generate_workflow(repo_name, attempt=1, last_error=None, last_yaml=""):
         process.stdin.close()
 
         # 🔥 Live Output Streaming: Print each line as it arrives
-        print("\n📜 **RAW OUTPUT FROM LLM:**\n")
+        logging.info("\n📜 **RAW OUTPUT FROM LLM:**\n")
         llm_output = ""
         for line in iter(process.stdout.readline, ""):
-            print(line, end="")  # Print each line as it's received
+            logging.info(line, end="")  # Print each line as it's received
             llm_output += line  # Collect full output for processing
 
         process.stdout.close()
@@ -158,15 +161,15 @@ def generate_workflow(repo_name, attempt=1, last_error=None, last_yaml=""):
         # Handle errors
         if return_code != 0:
             err = process.stderr.read()
-            print("\n❌ Errors (if any):\n", err)
+            logging.error(f"\n❌ Errors (if any):\n {err}")
             process.stderr.close()
 
         # ✅ Extract only the YAML part
         yaml_output = extract_yaml(llm_output)
 
         # 🔥 DEBUG: Print extracted YAML before saving
-        print("\n📝 **EXTRACTED YAML:**\n")
-        print(yaml_output)
+        logging.info("\n📝 **EXTRACTED YAML:**\n")
+        logging.info(yaml_output)
 
         # ✅ Save the extracted YAML (always save latest generated YAML)
         save_workflow(repo_name, yaml_output)
@@ -175,17 +178,17 @@ def generate_workflow(repo_name, attempt=1, last_error=None, last_yaml=""):
         is_valid, error_message = validate_yaml(repo_name)
 
         if not is_valid:
-            print(f"⚠️ YAML Validation Failed! Error: {error_message}")
-            print("🔄 Retrying with updated prompt including the error...")
+            logging.error(f"⚠️ YAML Validation Failed! Error: {error_message}")
+            logging.info("🔄 Retrying with updated prompt including the error...")
     
          # 🔄 Retry with the last generated YAML
             return generate_workflow(repo_name, attempt=attempt + 1, last_error=error_message, last_yaml=yaml_output)
 
-        print(f"✅ Successfully generated valid YAML on attempt {attempt}")
+        logging.info(f"✅ Successfully generated valid YAML on attempt {attempt}")
         return yaml_output  # ✅ Use valid YAML
 
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        logging.error(f"❌ Unexpected error: {e}")
         return last_yaml  # ✅ Return last known valid YAML to prevent breaking
 
 

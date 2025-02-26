@@ -6,10 +6,10 @@ export default function AutomationFrameworkUI() {
   const [command, setCommand] = useState("");
   const [repoName, setRepoName] = useState("");
   const [logs, setLogs] = useState<
-    { taskId: string; status: string; executedTask: string; output: string }[]
+    { taskId: string; status: string; output: string }[]
   >([]);
 
-  // Send command and repoName to FastAPI backend
+  // Send command and repoName to FastAPI backend and stream logs
   const mutation = useMutation({
     mutationFn: async ({ cmd, repo }: { cmd: string; repo: string }) => {
       const response = await fetch("http://localhost:8000/run-automation", {
@@ -19,29 +19,44 @@ export default function AutomationFrameworkUI() {
       });
 
       if (!response.ok) throw new Error("Failed to execute automation");
-      return response.json();
-    },
-    onSuccess: (data) => {
+
+      const taskId = crypto.randomUUID(); // Generate a task ID for tracking
       setLogs((prevLogs) => [
-        {
-          taskId: data.task_id,
-          status: data.status,
-          executedTask: data.executed_task,
-          output: data.output,
-        },
+        { taskId, status: "Running", output: "" },
         ...prevLogs,
       ]);
-      setCommand(""); // Clear input after execution
-      setRepoName(""); // Clear repo name after execution
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response stream available");
+
+      const decoder = new TextDecoder();
+      let newOutput = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        newOutput += decoder.decode(value, { stream: true });
+
+        // eslint-disable-next-line no-loop-func
+        setLogs((prevLogs) =>
+          prevLogs.map((log) =>
+            log.taskId === taskId
+              ? { ...log, output: newOutput, status: "Running" }
+              : log
+          )
+        );
+      }
+
+      setLogs((prevLogs) =>
+        prevLogs.map((log) =>
+          log.taskId === taskId ? { ...log, status: "Completed" } : log
+        )
+      );
     },
     onError: (error) => {
       setLogs((prevLogs) => [
-        {
-          taskId: "N/A",
-          status: "Error",
-          executedTask: "N/A",
-          output: error.message,
-        },
+        { taskId: "N/A", status: "Error", output: error.message },
         ...prevLogs,
       ]);
     },
@@ -89,9 +104,10 @@ export default function AutomationFrameworkUI() {
                   key={log.taskId}
                   className="p-3 bg-gray-100 border border-gray-300 rounded-lg shadow-sm"
                 >
-                  <p className="font-semibold">{log.executedTask}</p>
-                  <p className="text-sm text-gray-600">{log.status}</p>
-                  <pre className="text-xs text-gray-500">{log.output}</pre>
+                  <p className="font-semibold">{log.status}</p>
+                  <pre className="text-xs text-gray-500 whitespace-pre-wrap">
+                    {log.output}
+                  </pre>
                 </div>
               ))}
             </div>

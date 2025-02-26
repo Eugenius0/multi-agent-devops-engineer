@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import ollama
@@ -5,6 +6,7 @@ import uuid
 import ast
 from services.executor import run_script
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 app = FastAPI()
 
@@ -28,7 +30,7 @@ class UserRequest(BaseModel):
 
 @app.post("/run-automation")
 async def run_automation(request: UserRequest):
-    """Uses DeepSeek Coder v2 to determine which automation to run."""
+    """Uses DeepSeek Coder v2 to determine which automation to run and streams logs."""
     user_input = request.user_input
     repo_name = request.repo_name.strip()
 
@@ -57,13 +59,20 @@ async def run_automation(request: UserRequest):
     task_id = str(uuid.uuid4())
     task_status[task_id] = "Running"
 
-    if intent == "GitHub Actions":
-        output = run_script("setup_github_actions.py", repo_name)
-    elif intent == "Docker":
-        output = run_script("dockerize_app.py", repo_name)
-    elif intent == "GitHub Actions and Docker":
-        output = run_script("setup_github_actions.py", repo_name) + "\n" + run_script("dockerize_app.py", repo_name)
+    async def log_stream():
+        """Streams logs dynamically to the UI."""
+        if intent == "GitHub Actions":
+            script_name = "setup_github_actions.py"
+        elif intent == "Docker":
+            script_name = "dockerize_app.py"
+        else:
+            script_name = "setup_github_actions.py"
 
-    task_status[task_id] = "Completed"
+        for log in run_script(script_name, repo_name):
+            yield log + "\n"
+            await asyncio.sleep(0.1)  # Prevents buffer clogging
 
-    return {"task_id": task_id, "status": "Completed", "executed_task": intent, "output": output}
+        task_status[task_id] = "Completed"
+        yield "✅ Task Completed!"
+
+    return StreamingResponse(log_stream(), media_type="text/plain")

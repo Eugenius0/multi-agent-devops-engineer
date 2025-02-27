@@ -21,10 +21,19 @@ GITHUB_USER = get_github_username() or input("Enter your GitHub username: ").str
 
 MODEL_NAME = "deepseek-coder-v2" # change to prefered model
     
-def run_command(command):
-    """Executes a shell command and returns output."""
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    return result.returncode, result.stdout.strip(), result.stderr.strip()
+def run_command(command, capture_output=True):
+    """Executes a shell command with optional output capture."""
+    try:
+        if capture_output:
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            return result.returncode, result.stdout.strip(), result.stderr.strip()
+        else:
+            subprocess.run(command, shell=True, check=True)
+            logging.info(f"✅ Successfully executed: {command}")
+            return 0, None, None  # Success with no captured output
+    except subprocess.CalledProcessError as e:
+        logging.error(f"❌ Error executing: {command}\n{e}")
+        return e.returncode, None, str(e)  # Return error details
 
 # Clone the GitHub Repository
 def clone_repo(repo_name, change_dir=False):

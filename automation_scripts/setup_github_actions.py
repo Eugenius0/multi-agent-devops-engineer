@@ -156,8 +156,6 @@ def generate_workflow(repo_name, attempt=1, last_error=None, last_yaml=""):
         logging.error(f"❌ Unexpected error: {e}")
         return last_yaml  # ✅ Return last known valid YAML to prevent breaking
 
-
-
 def save_workflow(repo_name, workflow_content):
     """Saves the generated workflow YAML file inside .github/workflows."""
     workflow_file = f"{repo_name}/.github/workflows/github-actions-pipeline.yml"
@@ -179,17 +177,17 @@ def commit_and_push_workflow(repo_name):
 
 def install_github_cli():
     """Installs GitHub CLI if not present."""
-    if run_command("gh --version")[0] != 0:
-        run_command("brew install gh")
+    if run_command("gh --version", capture_output=True)[0] != 0:
+        run_command("brew install gh", capture_output=True)
 
 def authenticate_github():
     """Authenticates GitHub CLI."""
-    if run_command("gh auth status")[0] != 0:
-        run_command("gh auth login")
+    if run_command("gh auth status", capture_output=True)[0] != 0:
+        run_command("gh auth login", capture_output=True)
 
 def trigger_workflow(repo_name):
     """Triggers the GitHub Actions workflow execution."""
-    run_command(f"cd {repo_name} && gh workflow run github-actions-pipeline.yml")
+    run_command(f"cd {repo_name} && gh workflow run github-actions-pipeline.yml", capture_output=True)
 
 if __name__ == "__main__":
     print("🚀 Automating GitHub Actions pipeline creation with DeepSeek Coder v2 via Ollama...")

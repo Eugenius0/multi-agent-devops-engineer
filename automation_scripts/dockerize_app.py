@@ -5,15 +5,7 @@ import sys
 import git
 import re
 
-from utils.utils import MODEL_NAME, clone_repo
-
-def execute_command(command):
-    """Executes a shell command and prints the output."""
-    try:
-        subprocess.run(command, shell=True, check=True)
-        logging.info(f"✅ Successfully executed: {command}")
-    except subprocess.CalledProcessError as e:
-        logging.error(f"❌ Error executing: {command}\n{e}")
+from utils.utils import MODEL_NAME, clone_repo, run_command
 
 def write_file(filename, content):
     """Writes generated content to a file."""
@@ -193,8 +185,8 @@ def commit_and_push_files():
 def build_and_run_containers():
     """Builds and runs Docker containers using docker-compose."""
     print("🚀 Building and running Docker containers...")
-    execute_command("docker-compose up react-dev -d")
-    execute_command("docker-compose up react-prod -d")
+    run_command("docker-compose up react-dev -d", capture_output=False)
+    run_command("docker-compose up react-prod -d", capture_output=False)
 
 # Push to Docker Hub (Optional)
 def push_to_docker_hub(username):
@@ -203,8 +195,8 @@ def push_to_docker_hub(username):
     tag_command = f"docker tag react-docker-app-react-prod {username}/react-docker-app"
     push_command = f"docker push {username}/react-docker-app"
 
-    execute_command(tag_command)
-    execute_command(push_command)
+    run_command(tag_command, capture_output=False)
+    run_command(push_command, capture_output=False)
 
 # 🔹 Main Automation Workflow
 def main():

@@ -1,9 +1,11 @@
+import logging
 import os
 import subprocess
 import sys
 import git
 import re
 
+logging.basicConfig(format="%(asctime)s%(levelname)s:%(message)s", level=logging.ERROR)
 
 def get_github_username():
     """Fetch the GitHub username from the global Git config."""
@@ -28,15 +30,15 @@ def execute_command(command):
     """Executes a shell command and prints the output."""
     try:
         subprocess.run(command, shell=True, check=True)
-        print(f"✅ Successfully executed: {command}")
+        logging.info(f"✅ Successfully executed: {command}")
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error executing: {command}\n{e}")
+        logging.error(f"❌ Error executing: {command}\n{e}")
 
 def write_file(filename, content):
     """Writes generated content to a file."""
     with open(filename, "w") as f:
         f.write(content)
-    print(f"✅ {filename} created!")
+    logging.info(f"✅ {filename} created!")
 
 def generate_with_ollama(prompt):
     """Calls DeepSeek Coder via Ollama in the terminal to generate file content."""
@@ -72,10 +74,10 @@ def generate_with_ollama(prompt):
         process.stdin.write(strict_prompt)
         process.stdin.close()
 
-        print("\n📜 **RAW OUTPUT FROM LLM:**\n")
+        logging.info("\n📜 **RAW OUTPUT FROM LLM:**\n")
         llm_output = ""
         for line in iter(process.stdout.readline, ""):
-            print(line, end="")  # Print each line as it's received
+            logging.info(line, end="")  # Print each line as it's received
             llm_output += line  # Collect full output for processing
 
         process.stdout.close()
@@ -83,14 +85,14 @@ def generate_with_ollama(prompt):
 
         if return_code != 0:
             err = process.stderr.read()
-            print("\n❌ Errors (if any):\n", err)
+            logging.error("\n❌ Errors (if any):\n", err)
             process.stderr.close()
 
         # 🛠 Extract only the valid file content (strip unwanted markdown blocks)
         return extract_code(llm_output)
 
     except Exception as e:
-        print(f"❌ Error running Ollama: {e}")
+        logging.error(f"❌ Error running Ollama: {e}")
         return ""
 
 # 📌 Extract Only the Code Block from LLM Output
@@ -115,7 +117,7 @@ def clone_repo(repo_name):
     repo_path = os.path.join(os.getcwd(), repo_name)
 
     if os.path.isdir(repo_path) and os.path.isdir(os.path.join(repo_path, ".git")):
-        print(f"✅ Repository {repo_name} already exists locally. Skipping clone...")
+        logging.info(f"✅ Repository {repo_name} already exists locally. Skipping clone...")
     else:
         repo_url = f"https://github.com/{GITHUB_USER}/{repo_name}.git"
         print(f"🚀 Cloning repository from {repo_url} ...")
@@ -131,19 +133,19 @@ def clone_repo(repo_name):
 def analyze_project():
     """Analyzes the project structure and detects if it's a React app."""
     if os.path.exists("package.json"):
-        print("🛠 Detected a JavaScript/Node.js project.")
+        logging.info("🛠 Detected a JavaScript/Node.js project.")
         with open("package.json", "r") as f:
             package_json = f.read()
         if '"react"' in package_json:
-            print("✅ React app detected!")
+            logging.info("✅ React app detected!")
             return "React"
-    print("❌ React app not detected. Exiting...")
+    logging.error("❌ React app not detected. Exiting...")
     return None
 
 # Generate Docker & Compose Files with DeepSeek Coder
 def generate_docker_files():
     """Generates Docker-related files dynamically based on the repo contents."""
-    print("🤖 Generating Docker-related files with DeepSeek Coder via Ollama...")
+    print("🤖 Generating Docker-related files with DeepSeek Coder v2 via Ollama...")
 
     prompts = {
         "Dockerfile.dev": """

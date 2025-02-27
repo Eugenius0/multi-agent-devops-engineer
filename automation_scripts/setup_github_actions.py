@@ -5,42 +5,7 @@ import sys
 import git
 import re
 
-logging.basicConfig(format="%(asctime)s%(levelname)s:%(message)s", level=logging.ERROR)
-
-def get_github_username():
-    """Fetch the GitHub username from the global Git config."""
-    try:
-        result = subprocess.run(["git", "config", "--global", "user.name"], capture_output=True, text=True)
-        return result.stdout.strip() if result.returncode == 0 else None
-    except Exception:
-        return None
-
-# GitHub Credentials
-GITHUB_TOKEN = "your-github-token"
-GITHUB_USER = get_github_username() or input("Enter your GitHub username: ").strip()
-
-
-MODEL_NAME = "deepseek-coder-v2" # change to prefered model
-
-
-def run_command(command):
-    """Executes a shell command and returns output."""
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    return result.returncode, result.stdout.strip(), result.stderr.strip()
-
-def clone_repo(repo_name):
-    """Checks if the repo exists locally; if not, clones it."""
-    repo_path = os.path.join(os.getcwd(), repo_name)
-
-    if os.path.isdir(repo_path) and os.path.isdir(os.path.join(repo_path, ".git")):
-        logging.info(f"✅ Repository {repo_name} already exists locally. Skipping clone...") # only logged, not streamed to UI
-    else:
-        repo_url = f"https://github.com/{GITHUB_USER}/{repo_name}.git"
-        print(f"🚀 Cloning repository from {repo_url} ...")
-        return_code, _, stderr = run_command(f"git clone {repo_url}")
-
-        if return_code != 0:
-            raise RuntimeError(f"❌ Failed to clone repository: {stderr}")
+from utils.utils import MODEL_NAME, clone_repo, run_command
 
 def setup_workflow_dir(repo_name):
     """Creates the .github/workflows directory inside the repo."""
@@ -233,7 +198,7 @@ if __name__ == "__main__":
     print(f"📂 Processing repository: {repo_name}")
 
     print("\n🚀 Cloning repository...")
-    clone_repo(repo_name)
+    clone_repo(repo_name, change_dir=False)
 
     print("\n📂 Setting up workflow directory...")
     setup_workflow_dir(repo_name)

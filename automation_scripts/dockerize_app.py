@@ -5,26 +5,7 @@ import sys
 import git
 import re
 
-logging.basicConfig(format="%(asctime)s%(levelname)s:%(message)s", level=logging.ERROR)
-
-def get_github_username():
-    """Fetch the GitHub username from the global Git config."""
-    try:
-        result = subprocess.run(["git", "config", "--global", "user.name"], capture_output=True, text=True)
-        return result.stdout.strip() if result.returncode == 0 else None
-    except Exception:
-        return None
-
-# GitHub Credentials
-GITHUB_TOKEN = "your-github-token"
-GITHUB_USER = get_github_username() or input("Enter your GitHub username: ").strip()
-
-MODEL_NAME = "deepseek-coder-v2" # change to prefered model
-
-def run_command(command):
-    """Executes a shell command and returns output."""
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    return result.returncode, result.stdout.strip(), result.stderr.strip()
+from utils.utils import MODEL_NAME, clone_repo
 
 def execute_command(command):
     """Executes a shell command and prints the output."""
@@ -85,7 +66,7 @@ def generate_with_ollama(prompt):
 
         if return_code != 0:
             err = process.stderr.read()
-            logging.error("\n❌ Errors (if any):\n", err)
+            logging.error(f"\n❌ Errors (if any):\n {err}")
             process.stderr.close()
 
         # 🛠 Extract only the valid file content (strip unwanted markdown blocks)
@@ -109,25 +90,6 @@ def extract_code(text):
 
     return code_text.replace("\t", "    ")  # Ensure no tab issues for YAML compliance
 
-
-
-# Clone the GitHub Repository
-def clone_repo(repo_name):
-    """Clones the given GitHub repository if not already cloned."""
-    repo_path = os.path.join(os.getcwd(), repo_name)
-
-    if os.path.isdir(repo_path) and os.path.isdir(os.path.join(repo_path, ".git")):
-        logging.info(f"✅ Repository {repo_name} already exists locally. Skipping clone...")
-    else:
-        repo_url = f"https://github.com/{GITHUB_USER}/{repo_name}.git"
-        print(f"🚀 Cloning repository from {repo_url} ...")
-        return_code, _, stderr = run_command(f"git clone {repo_url}")
-
-        if return_code != 0:
-            raise RuntimeError(f"❌ Failed to clone repository: {stderr}")
-        
-    os.chdir(repo_name)
-    return repo_name
 
 # Analyze the Project Structure
 def analyze_project():
@@ -253,7 +215,7 @@ def main():
     print(f"📂 Processing repository: {repo_name}")
     
     print("\n🚀 Cloning repository...")
-    clone_repo(repo_name)
+    clone_repo(repo_name, change_dir=True)
 
     # Analyze project
     if analyze_project() != "React":

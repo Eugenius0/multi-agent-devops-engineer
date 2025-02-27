@@ -18,11 +18,11 @@ export default function AutomationFrameworkUI() {
   // Function to determine executed task name
   const getExecutedTaskName = (rawOutput: string) => {
     if (rawOutput.includes("GitHub")) {
-      return "Creation of GitHub Actions pipeline";
+      return "✅ Creation of GitHub Actions pipeline";
     } else if (rawOutput.includes("Docker")) {
-      return "Containerization of your app with Docker";
+      return "✅ Containerization of your app with Docker";
     }
-    return "Executed your indicated automation task"; // Fallback if unknown
+    return "✅ Executed your indicated automation task"; // Fallback if unknown
   };
 
   // Send command and repoName to FastAPI backend and stream logs

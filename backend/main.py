@@ -1,4 +1,3 @@
-import asyncio
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import ollama
@@ -60,7 +59,7 @@ async def run_automation(request: UserRequest):
     task_status[task_id] = "Running"
 
     async def log_stream():
-        """Streams logs dynamically to the UI."""
+        """Streams logs dynamically to the UI with real-time output."""
         if intent == "GitHub Actions":
             script_name = "setup_github_actions.py"
         elif intent == "Docker":
@@ -68,11 +67,13 @@ async def run_automation(request: UserRequest):
         else:
             script_name = "setup_github_actions.py"
 
-        for log in run_script(script_name, repo_name):
-            yield log + "\n"
-            await asyncio.sleep(0.1)  # Prevents buffer clogging
+        process = run_script(script_name, repo_name)
+
+        for log in process:
+            yield log  # 🔄 Immediately send logs to the UI
 
         task_status[task_id] = "Completed"
         yield "✅ Task Completed!"
 
-    return StreamingResponse(log_stream(), media_type="text/plain")
+    return StreamingResponse(log_stream(), media_type="text/event-stream")
+

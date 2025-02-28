@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "@headlessui/react";
 import { useMutation } from "@tanstack/react-query";
 
@@ -14,6 +14,15 @@ export default function AutomationFrameworkUI() {
       timestamp: string;
     }[]
   >([]);
+
+  const logsEndRef = useRef<HTMLDivElement>(null); // 🔹 Ref for scrolling
+
+  // Auto-scroll when executionStatus updates
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [executionStatus]);
 
   // Function to determine executed task name
   const getExecutedTaskName = (rawOutput: string) => {
@@ -119,6 +128,7 @@ export default function AutomationFrameworkUI() {
             <pre className="text-xs text-gray-700 whitespace-pre-wrap">
               {executionStatus}
             </pre>
+            <div ref={logsEndRef} /> {/* ensures auto-scrolling */}
           </div>
         )}
 

@@ -12,6 +12,7 @@ export default function AutomationFrameworkUI() {
       status: string;
       executedTask: string;
       timestamp: string;
+      executionTime: string;
     }[]
   >([]);
 
@@ -66,6 +67,13 @@ export default function AutomationFrameworkUI() {
       // Extract readable task name
       const executedTask = getExecutedTaskName(newOutput);
 
+      const executionTimeMatch = newOutput.match(
+        /Execution Time: ([\d.]+) seconds/
+      );
+      const executionTime = executionTimeMatch
+        ? executionTimeMatch[1]
+        : "Unknown";
+
       // Store completed execution in history
       setLogs((prevLogs) => [
         {
@@ -73,6 +81,7 @@ export default function AutomationFrameworkUI() {
           status: `Completed ${executedTask}`,
           executedTask,
           timestamp: new Date().toLocaleString(), // Save timestamp
+          executionTime,
         },
         ...prevLogs,
       ]);
@@ -85,6 +94,7 @@ export default function AutomationFrameworkUI() {
           status: "Error",
           executedTask: "N/A",
           timestamp: new Date().toLocaleString(),
+          executionTime: "N/A",
         },
         ...prevLogs,
       ]);
@@ -146,6 +156,9 @@ export default function AutomationFrameworkUI() {
                 >
                   <p className="text-sm text-gray-600">{log.timestamp}</p>
                   <p className="font-semibold">{log.status}</p>
+                  <p className="text-xs text-gray-500">
+                    ⏳ {log.executionTime} seconds
+                  </p>
                 </div>
               ))}
             </div>

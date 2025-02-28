@@ -1,3 +1,4 @@
+import time
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import ollama
@@ -33,6 +34,7 @@ async def run_automation(request: UserRequest):
     user_input = request.user_input
     repo_name = request.repo_name.strip()
 
+
     if not user_input or not repo_name:
         raise HTTPException(status_code=400, detail="User input and repo name are required")
 
@@ -67,13 +69,18 @@ async def run_automation(request: UserRequest):
         else:
             script_name = "setup_github_actions.py"
 
+        start_time = time.time()  # ⏳ Record start time
+
         process = run_script(script_name, repo_name)
 
         for log in process:
             yield log  # 🔄 Immediately send logs to the UI
 
         task_status[task_id] = "Completed"
-        yield "✅ Task Completed!"
+        end_time = time.time()  # ⏳ Record end time
+        elapsed_time = end_time - start_time  # ⏳ Calculate execution duration
+
+        yield f"✅ Task Completed! Execution Time: {elapsed_time:.2f} seconds\n"
 
     return StreamingResponse(log_stream(), media_type="text/event-stream")
 

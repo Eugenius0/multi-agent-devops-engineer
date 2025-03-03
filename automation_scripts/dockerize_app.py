@@ -97,12 +97,12 @@ def analyze_project():
     return None
 
 # Generate Docker & Compose Files with DeepSeek Coder
-def generate_docker_files():
+def generate_docker_files(user_input):
     """Generates Docker-related files dynamically based on the repo contents."""
     print("🤖 Generating Docker-related files with DeepSeek Coder v2 via Ollama...")
 
     prompts = {
-        "Dockerfile.dev": """
+        "Dockerfile.dev": f"""
         Generate a valid **Dockerfile.dev** for a React app.
         
         - Use Node.js 20 Alpine.
@@ -113,6 +113,9 @@ def generate_docker_files():
         - Start the development server with `npm start`.
 
         The output must be **raw and valid**, with **no explanations or Markdown formatting**.
+
+        **User Request:**
+        {user_input}
         """,
         
         "Dockerfile": """
@@ -204,6 +207,8 @@ def main():
 
     # Get the GitHub repository name from the user
     repo_name = sys.argv[1]
+    user_input = sys.argv[2]
+
     print(f"📂 Processing repository: {repo_name}")
     
     print("\n🚀 Cloning repository...")
@@ -214,7 +219,7 @@ def main():
         return
 
     # Generate Docker files dynamically
-    generate_docker_files()
+    generate_docker_files(user_input)
 
     # Commit and push to GitHub
     print("\n🔄 Committing and pushing workflow...")

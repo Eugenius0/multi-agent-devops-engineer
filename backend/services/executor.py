@@ -5,7 +5,7 @@ import sys
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SCRIPTS_DIR = BASE_DIR / "automation_scripts"
 
-def run_script(script_name, repo_name):
+def run_script(script_name, repo_name, user_input):
     """Runs an automation script and streams its output."""
     script_path = SCRIPTS_DIR / script_name
 
@@ -14,7 +14,7 @@ def run_script(script_name, repo_name):
         return
 
     process = subprocess.Popen(
-        ["python", "-u", str(script_path), repo_name], 
+        ["python", "-u", str(script_path), repo_name, user_input], 
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True
     )
 

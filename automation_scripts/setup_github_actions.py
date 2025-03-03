@@ -51,7 +51,7 @@ def extract_yaml(text):
 
     return yaml_text.replace("\t", "    ")  # Convert tabs to spaces for YAML compliance
 
-def generate_workflow(repo_name, attempt=1, last_error=None, last_yaml=""):
+def generate_workflow(repo_name, user_input, attempt=1, last_error=None, last_yaml=""):
     """Generates a GitHub Actions workflow YAML file using DeepSeek-R1 via Ollama.
        If invalid, retries automatically up to MAX_RETRIES.
     """
@@ -81,6 +81,9 @@ def generate_workflow(repo_name, attempt=1, last_error=None, last_yaml=""):
     - **The workflow must contain two jobs: `build` and `test`.**
     - **The `test` job must run after `build` using `needs: build`**.
     - **The `test` job must run the correct test command based on the repository contents.**
+
+    **User Request:**
+    {user_input}
 
     **Repository Contents:**
     {files}
@@ -147,7 +150,7 @@ def generate_workflow(repo_name, attempt=1, last_error=None, last_yaml=""):
             logging.info("🔄 Retrying with updated prompt including the error...")
     
          # 🔄 Retry with the last generated YAML
-            return generate_workflow(repo_name, attempt=attempt + 1, last_error=error_message, last_yaml=yaml_output)
+            return generate_workflow(repo_name, user_input, attempt=attempt + 1, last_error=error_message, last_yaml=yaml_output)
 
         logging.info(f"✅ Successfully generated valid YAML on attempt {attempt}")
         return yaml_output  # ✅ Use valid YAML
@@ -193,6 +196,8 @@ if __name__ == "__main__":
     print("🚀 Automating GitHub Actions pipeline creation with DeepSeek Coder v2 via Ollama...")
     
     repo_name = sys.argv[1]
+    user_input = sys.argv[2]
+
     print(f"📂 Processing repository: {repo_name}")
 
     print("\n🚀 Cloning repository...")
@@ -202,7 +207,7 @@ if __name__ == "__main__":
     setup_workflow_dir(repo_name)
 
     print("\n🧠 Generating workflow using DeepSeek Coder v2 on Ollama...")
-    workflow_yaml = generate_workflow(repo_name)
+    workflow_yaml = generate_workflow(repo_name, user_input)
     save_workflow(repo_name, workflow_yaml)
 
     print("\n🔄 Committing and pushing workflow...")

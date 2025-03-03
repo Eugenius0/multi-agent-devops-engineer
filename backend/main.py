@@ -71,7 +71,7 @@ async def run_automation(request: UserRequest):
 
         start_time = time.time()  # ⏳ Record start time
 
-        process = run_script(script_name, repo_name)
+        process = run_script(script_name, repo_name, user_input)
 
         for log in process:
             yield log  # 🔄 Immediately send logs to the UI

@@ -69,18 +69,14 @@ async def run_automation(request: UserRequest):
         else:
             script_name = "setup_github_actions.py"
 
-        start_time = time.time()  # ⏳ Record start time
-
         process = run_script(script_name, repo_name, user_input)
 
         for log in process:
             yield log  # 🔄 Immediately send logs to the UI
 
         task_status[task_id] = "Completed"
-        end_time = time.time()  # ⏳ Record end time
-        elapsed_time = end_time - start_time  # ⏳ Calculate execution duration
 
-        yield f"✅ Task Completed! Execution Time: {elapsed_time:.2f} seconds\n"
+        yield "✅ Task Completed!"
 
     return StreamingResponse(log_stream(), media_type="text/event-stream")
 

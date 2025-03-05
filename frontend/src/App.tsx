@@ -18,12 +18,37 @@ export default function AutomationFrameworkUI() {
 
   const logsEndRef = useRef<HTMLDivElement>(null); // 🔹 Ref for scrolling
 
+  // Timer State
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(false); // Track timer state
+  const [finalExecutionTime, setFinalExecutionTime] = useState<string | null>(
+    null
+  );
+
   // Auto-scroll when executionStatus updates
   useEffect(() => {
     if (logsEndRef.current) {
       logsEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [executionStatus]);
+
+  // Timer Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (isRunning && startTime !== null) {
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000)); // Update elapsed time in seconds
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isRunning, startTime]);
 
   // Function to determine executed task name
   const getExecutedTaskName = (rawOutput: string) => {
@@ -38,6 +63,13 @@ export default function AutomationFrameworkUI() {
   // Send command and repoName to FastAPI backend and stream logs
   const mutation = useMutation({
     mutationFn: async ({ cmd, repo }: { cmd: string; repo: string }) => {
+      // ⏳ Clear previous execution status and start timer
+      setExecutionStatus("");
+      setElapsedTime(0);
+      setStartTime(Date.now());
+      setIsRunning(true);
+      setFinalExecutionTime(null); // Reset final execution time for new execution
+
       const response = await fetch("http://localhost:8000/run-automation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,7 +79,6 @@ export default function AutomationFrameworkUI() {
       if (!response.ok) throw new Error("Failed to execute automation");
 
       const taskId = crypto.randomUUID(); // Generate a task ID for tracking
-      setExecutionStatus(""); // Clear previous status
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error("No response stream available");
@@ -64,30 +95,28 @@ export default function AutomationFrameworkUI() {
         setExecutionStatus(newOutput); // Keep live execution logs visible
       }
 
+      setIsRunning(false);
+      setFinalExecutionTime(`${elapsedTime} seconds`);
+
       // Extract readable task name
       const executedTask = getExecutedTaskName(newOutput);
 
-      const executionTimeMatch = newOutput.match(
-        /Execution Time: ([\d.]+) seconds/
-      );
-      const executionTime = executionTimeMatch
-        ? executionTimeMatch[1]
-        : "Unknown";
-
-      // Store completed execution in history
+      // Store completed execution in history with correct execution time
       setLogs((prevLogs) => [
         {
           taskId,
           status: `Completed ${executedTask}`,
           executedTask,
-          timestamp: new Date().toLocaleString(), // Save timestamp
-          executionTime,
+          timestamp: new Date().toLocaleString(),
+          executionTime: `${elapsedTime} seconds`,
         },
         ...prevLogs,
       ]);
     },
     onError: (error) => {
-      setExecutionStatus("Error occurred during execution.");
+      setExecutionStatus("❌ Error occurred during execution.");
+      setIsRunning(false);
+      setFinalExecutionTime(null);
       setLogs((prevLogs) => [
         {
           taskId: "N/A",
@@ -122,14 +151,46 @@ export default function AutomationFrameworkUI() {
           onChange={(e) => setRepoName(e.target.value)}
         />
 
-        {/* Execute Button */}
+        {/* Execute Button with Loading Indicator */}
         <Button
-          className="w-full bg-black text-white px-4 py-2 rounded mt-4 hover:bg-gray-800 focus:ring focus:ring-gray-500 disabled:bg-gray-400"
+          className="w-full bg-black text-white px-4 py-2 rounded mt-4 hover:bg-gray-800 focus:ring focus:ring-gray-500 disabled:bg-gray-400 flex justify-center items-center"
           onClick={() => mutation.mutate({ cmd: command, repo: repoName })}
           disabled={!command.trim() || !repoName.trim() || mutation.isPending}
         >
+          {mutation.isPending ? (
+            <svg
+              className="animate-spin h-5 w-5 mr-2 text-white"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z"
+              />
+            </svg>
+          ) : null}
           {mutation.isPending ? "Processing..." : "Execute"}
         </Button>
+
+        {/* Execution Timer Display */}
+        {finalExecutionTime ? (
+          <div className="mt-4 text-center text-gray-600 text-sm">
+            ⏳ Total Execution Time: {finalExecutionTime}
+          </div>
+        ) : isRunning ? (
+          <div className="mt-4 text-center text-gray-600 text-sm">
+            ⏳ Execution Time: {elapsedTime} seconds
+          </div>
+        ) : null}
 
         {/* Execution Status (Live & Persistent) */}
         {executionStatus && (
@@ -157,7 +218,7 @@ export default function AutomationFrameworkUI() {
                   <p className="text-sm text-gray-600">{log.timestamp}</p>
                   <p className="font-semibold">{log.status}</p>
                   <p className="text-xs text-gray-500">
-                    ⏳ {log.executionTime} seconds
+                    ⏳ {log.executionTime}
                   </p>
                 </div>
               ))}

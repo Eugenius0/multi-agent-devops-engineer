@@ -77,6 +77,8 @@ def generate_workflow(repo_name, user_input, attempt=1, last_error=None, last_ya
     - **MANDATORY KEYS:** `name`, `on`, and `jobs` **must** exist in the output.
     - **Trigger the workflow with `on:` (e.g., `push:` or `pull_request:`)**.
     - **Use `runs-on: ubuntu-latest` for each job**.
+    - **For Python projects, use `actions/setup-python@v4` and set the latest available Python version**.
+    - **Always check available Python versions and avoid selecting an unsupported version**.
     - **Each job must contain `steps:` using `uses:` or `run:` correctly**.
     - **The workflow must contain two jobs: `build` and `test`.**
     - **The `test` job must run after `build` using `needs: build`**.

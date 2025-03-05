@@ -155,6 +155,7 @@ def generate_docker_files(user_input):
           - Build from `Dockerfile.dev`
           - Use `stdin_open: true` and `tty: true`
           - Mount volumes for live reloading (`./:/app`)
+          - Exclude `node_modules/` from being overwritten (`- /app/node_modules`)
           - Expose port `3000`
         - `react-prod` should:
           - Build from `Dockerfile`

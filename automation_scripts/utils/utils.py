@@ -2,8 +2,6 @@ import logging
 import os
 import subprocess
 
-import git
-
 
 logging.basicConfig(format="%(asctime)s%(levelname)s:%(message)s", level=logging.ERROR)
 

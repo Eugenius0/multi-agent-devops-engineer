@@ -6,7 +6,7 @@ import time
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SCRIPTS_DIR = BASE_DIR / "automation_scripts"
 
-MAX_EXECUTION_TIME = 100  # ⏳ Set execution time limit (100 seconds)
+MAX_EXECUTION_TIME = 1000  # ⏳ Set execution time limit
 
 def run_script(script_name, repo_name, user_input):
     """Runs an automation script and streams its output, stopping after 100 seconds."""

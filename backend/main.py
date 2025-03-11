@@ -42,7 +42,7 @@ async def run_automation(request: UserRequest):
         model=MODEL_NAME,
         messages=[{"role": "user", "content": f"""
             You are an AI assistant. Your task is to extract the correct automation type from a user request. 
-            Options are: 'GitHub Actions', 'Docker', 'GitHub Actions and Docker'. 
+            Options are: 'GitHub Actions', 'Docker', 'GitLab CI/CD'. 
             Do NOT provide any explanation—ONLY return one of these exact options.
         
             User request: {user_input}
@@ -54,7 +54,7 @@ async def run_automation(request: UserRequest):
     except (SyntaxError, ValueError):
         intent = response['message']['content'].strip()
 
-    if intent not in ["GitHub Actions", "Docker", "GitHub Actions and Docker"]:
+    if intent not in ["GitHub Actions", "Docker", "GitLab CI/CD"]:
         return {"error": "LLM returned an unrecognized intent.", "llm_output": intent}
 
     task_id = str(uuid.uuid4())
@@ -66,6 +66,8 @@ async def run_automation(request: UserRequest):
             script_name = "setup_github_actions.py"
         elif intent == "Docker":
             script_name = "dockerize_app.py"
+        elif intent == "GitLab CI/CD":
+            script_name = "setup_gitlab_ci.py"
         else:
             script_name = "setup_github_actions.py"
 

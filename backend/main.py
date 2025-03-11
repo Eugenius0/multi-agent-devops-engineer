@@ -41,11 +41,21 @@ async def run_automation(request: UserRequest):
     response = ollama.chat(
         model=MODEL_NAME,
         messages=[{"role": "user", "content": f"""
-            You are an AI assistant. Your task is to extract the correct automation type from a user request. 
-            Options are: 'GitHub Actions', 'Docker', 'GitLab CI/CD'. 
-            Do NOT provide any explanation—ONLY return one of these exact options.
+            You are an AI assistant responsible for classifying automation tasks.
         
-            User request: {user_input}
+        **Task:** Based on the user request, return **only one** of these exact options:
+        - `GitHub Actions`
+        - `Docker`
+        - `GitLab CI/CD`
+        
+        **Rules:**
+        - If the user mentions **GitHub Actions**, return **GitHub Actions**.
+        - If the user mentions **Docker**, return **Docker**.
+        - If the user mentions **GitLab pipeline** or **GitLab CI/CD**, return **GitLab CI/CD**.
+        - Do NOT return explanations or any extra text—**ONLY return the exact option.**
+        
+        **User Request:**
+        {user_input}
         """}]
     )
 
@@ -53,6 +63,8 @@ async def run_automation(request: UserRequest):
         intent = ast.literal_eval(response['message']['content'].strip())
     except (SyntaxError, ValueError):
         intent = response['message']['content'].strip()
+
+        print(f"🧠 LLM determined intent: {intent}")
 
     if intent not in ["GitHub Actions", "Docker", "GitLab CI/CD"]:
         return {"error": "LLM returned an unrecognized intent.", "llm_output": intent}

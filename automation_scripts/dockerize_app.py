@@ -213,7 +213,7 @@ def main():
     print(f"📂 Processing repository: {repo_name}")
     
     print("\n🚀 Cloning repository...")
-    clone_repo(repo_name, change_dir=True)
+    clone_repo(repo_name, platform="github", change_dir=True)
 
     # Analyze project
     if analyze_project() != "React":

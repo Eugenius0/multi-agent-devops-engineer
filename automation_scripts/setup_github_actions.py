@@ -198,7 +198,7 @@ if __name__ == "__main__":
     print(f"📂 Processing repository: {repo_name}")
 
     print("\n🚀 Cloning repository...")
-    clone_repo(repo_name, change_dir=False)
+    clone_repo(repo_name, platform="github", change_dir=False)
 
     print("\n📂 Setting up workflow directory...")
     setup_workflow_dir(repo_name)

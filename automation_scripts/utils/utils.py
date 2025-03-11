@@ -34,11 +34,12 @@ def run_command(command, capture_output=True):
         return e.returncode, None, str(e)  # Return error details
 
 # Clone the GitHub Repository
-def clone_repo(repo_name, change_dir=False):
-    """Clones a GitHub repository if not already cloned.
+def clone_repo(repo_name, platform, change_dir=False):
+    """Clones a repository from GitHub or GitLab if not already cloned.
 
     Args:
         repo_name (str): The name of the repository.
+        platform (str): The platform to clone from ("github" or "gitlab").
         change_dir (bool): Whether to change into the repo directory after cloning.
     """
     repo_path = os.path.join(os.getcwd(), repo_name)
@@ -46,7 +47,13 @@ def clone_repo(repo_name, change_dir=False):
     if os.path.isdir(repo_path) and os.path.isdir(os.path.join(repo_path, ".git")):
         logging.info(f"✅ Repository {repo_name} already exists locally. Skipping clone...")
     else:
-        repo_url = f"https://github.com/{GITHUB_USER}/{repo_name}.git"
+        if platform.lower() == "github":
+            repo_url = f"https://github.com/{GITHUB_USER}/{repo_name}.git"
+        elif platform.lower() == "gitlab":
+            repo_url = f"https://gitlab.com/{repo_name}.git"
+        else:
+            raise ValueError("❌ Invalid platform. Choose either 'github' or 'gitlab'.")
+
         print(f"🚀 Cloning repository from {repo_url} ...")
         return_code, _, stderr = run_command(f"git clone {repo_url}")
 

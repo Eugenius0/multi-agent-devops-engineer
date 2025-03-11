@@ -64,8 +64,6 @@ async def run_automation(request: UserRequest):
     except (SyntaxError, ValueError):
         intent = response['message']['content'].strip()
 
-        print(f"🧠 LLM determined intent: {intent}")
-
     if intent not in ["GitHub Actions", "Docker", "GitLab CI/CD"]:
         return {"error": "LLM returned an unrecognized intent.", "llm_output": intent}
 

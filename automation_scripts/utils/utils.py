@@ -33,24 +33,25 @@ def run_command(command, capture_output=True):
         logging.error(f"❌ Error executing: {command}\n{e}")
         return e.returncode, None, str(e)  # Return error details
 
-# Clone the GitHub Repository
+# Clone the Repository (GitHub or GitLab)
 def clone_repo(repo_name, platform, change_dir=False):
     """Clones a repository from GitHub or GitLab if not already cloned.
 
     Args:
-        repo_name (str): The name of the repository.
+        repo_name (str): The full name of the repository, including the group for GitLab.
         platform (str): The platform to clone from ("github" or "gitlab").
         change_dir (bool): Whether to change into the repo directory after cloning.
     """
-    repo_path = os.path.join(os.getcwd(), repo_name)
+    repo_dir = repo_name.split("/")[-1]  # Extract the repo name (without group) for local directory
+    repo_path = os.path.join(os.getcwd(), repo_dir)
 
     if os.path.isdir(repo_path) and os.path.isdir(os.path.join(repo_path, ".git")):
         logging.info(f"✅ Repository {repo_name} already exists locally. Skipping clone...")
     else:
         if platform.lower() == "github":
-            repo_url = f"https://github.com/{GITHUB_USER}/{repo_name}.git"
+            repo_url = f"https://github.com/{GITHUB_USER}/{repo_dir}.git"
         elif platform.lower() == "gitlab":
-            repo_url = f"https://gitlab.com/{repo_name}.git"
+            repo_url = f"https://gitlab.com/{repo_name}.git"  # Keep full path for GitLab
         else:
             raise ValueError("❌ Invalid platform. Choose either 'github' or 'gitlab'.")
 
@@ -61,6 +62,7 @@ def clone_repo(repo_name, platform, change_dir=False):
             raise RuntimeError(f"❌ Failed to clone repository: {stderr}")
 
     if change_dir:
-        os.chdir(repo_name)  # Only change directory if specified
+        os.chdir(repo_dir)  # Only change directory if specified
 
-    return repo_name
+    return repo_dir  # Return the local repo name (without group for GitLab)
+

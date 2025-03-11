@@ -128,7 +128,8 @@ def save_pipeline(repo_name, pipeline_content):
 
 def commit_and_push_pipeline(repo_name):
     """Commits and pushes the GitLab CI/CD pipeline to the repository."""
-    repo_path = os.path.join(os.getcwd(), repo_name)
+    repo_dir = repo_name.split("/")[-1]  # Extract the repo name (without group) for local directory
+    repo_path = os.path.join(os.getcwd(), repo_dir)
 
     if not os.path.isdir(os.path.join(repo_path, ".git")):
         raise git.exc.InvalidGitRepositoryError(f"❌ {repo_path} is not a valid Git repository.")

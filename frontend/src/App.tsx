@@ -56,6 +56,8 @@ export default function AutomationFrameworkUI() {
       return "✅ Creation of GitHub Actions pipeline";
     } else if (rawOutput.includes("Docker")) {
       return "✅ Containerization of your app with Docker";
+    } else if (rawOutput.includes("GitLab")) {
+      return "✅ Creation of GitLab CI/CD pipeline";
     }
     return "✅ Executed your indicated automation task"; // Fallback if unknown
   };

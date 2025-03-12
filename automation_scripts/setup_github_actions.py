@@ -2,10 +2,11 @@ import logging
 import os
 import subprocess
 import sys
+import webbrowser
 import git
 import re
 
-from utils.utils import MODEL_NAME, clone_repo, run_command
+from utils.utils import MODEL_NAME, clone_repo, get_github_username, run_command
 
 def setup_workflow_dir(repo_name):
     """Creates the .github/workflows directory inside the repo."""
@@ -189,11 +190,19 @@ def trigger_workflow(repo_name):
     """Triggers the GitHub Actions workflow execution."""
     run_command(f"cd {repo_name} && gh workflow run github-actions-pipeline.yml", capture_output=True)
 
+
+def open_github_actions_page(repo_name, user_name):
+    """Automatically opens the GitHub Actions page in the browser."""
+    github_actions_url = f"https://github.com/{user_name}/{repo_name}/actions"
+    print("\n🔗 Opened GitHub Actions pipeline in your default browser. \n")
+    webbrowser.open(github_actions_url)  # Open in the default web browser
+
 if __name__ == "__main__":
     print("🚀 Automating GitHub Actions pipeline creation with DeepSeek Coder v2 via Ollama...")
     
     repo_name = sys.argv[1]
     user_input = sys.argv[2]
+    user_name = get_github_username()
 
     print(f"📂 Processing repository: {repo_name}")
 
@@ -220,3 +229,6 @@ if __name__ == "__main__":
     trigger_workflow(repo_name)
 
     print("\n✅ GitHub Actions pipeline setup and execution completed!")
+
+    # 🔗 Automatically open GitHub Actions pipeline in browser
+    open_github_actions_page(repo_name, user_name)

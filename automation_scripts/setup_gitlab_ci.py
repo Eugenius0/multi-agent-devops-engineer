@@ -2,10 +2,11 @@ import logging
 import os
 import subprocess
 import sys
+import webbrowser
 import git
 import re
 
-from utils.utils import MODEL_NAME, clone_repo
+from utils.utils import MODEL_NAME, clone_repo, get_github_username
 
 def setup_ci_dir(repo_name):
     """Ensures the GitLab pipeline configuration is in place."""
@@ -140,11 +141,19 @@ def commit_and_push_pipeline(repo_name):
     repo.index.commit("Added GitLab CI/CD pipeline")
     repo.remote(name="origin").push()
 
+
+def open_github_actions_page(repo_name):
+    """Automatically opens the GitLab Pipeline page in the browser."""
+    github_actions_url = f"https://gitlab.com/{repo_name}/-/pipelines"
+    print("\n🔗 Opened GitLab pipeline in your default browser. \n")
+    webbrowser.open(github_actions_url)  # Open in the default web browser
+
 if __name__ == "__main__":
     print("🚀 Automating GitLab CI/CD pipeline creation with DeepSeek Coder via Ollama...")
     
     repo_name = sys.argv[1]
     user_input = sys.argv[2]
+    user_name = get_github_username()
 
     print(f"📂 Processing repository: {repo_name}")
 
@@ -162,3 +171,6 @@ if __name__ == "__main__":
     commit_and_push_pipeline(repo_name)
 
     print("\n✅ GitLab CI/CD pipeline setup completed!")
+
+    # 🔗 Automatically open GitLab Actions pipeline in browser
+    open_github_actions_page(repo_name)

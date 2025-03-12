@@ -2,10 +2,11 @@ import logging
 import os
 import subprocess
 import sys
+import webbrowser
 import git
 import re
 
-from utils.utils import MODEL_NAME, clone_repo, run_command
+from utils.utils import MODEL_NAME, clone_repo, get_github_username, run_command
 
 def write_file(filename, content):
     """Writes generated content to a file."""
@@ -202,6 +203,32 @@ def push_to_docker_hub(username):
     run_command(tag_command, capture_output=False)
     run_command(push_command, capture_output=False)
 
+def open_relevant_page(repo_name, docker_hub_user=None):
+    """Automatically opens the most relevant URL after automation."""
+    github_user = get_github_username()  # Retrieve dynamically
+
+    # Default: Open the GitHub repository
+    github_repo_url = f"https://github.com/{github_user}/{repo_name}"
+
+    # If the app is running locally via docker-compose, open the local dev server
+    if docker_hub_user:
+        docker_hub_url = f"https://hub.docker.com/r/{docker_hub_user}/react-docker-app"
+        print(f"\n🔗 Opening Docker Hub Repository: {docker_hub_url}")
+        webbrowser.open(docker_hub_url)
+    else:
+        print(f"\n🔗 Opening GitHub Repository: {github_repo_url}")
+        webbrowser.open(github_repo_url)
+
+    # Check if containers are running and open the correct URL
+    check_running = subprocess.run(["docker", "ps"], capture_output=True, text=True)
+    
+    if "react-dev" in check_running.stdout:
+        print("\n🚀 Detected running React app in development mode. Opening browser...")
+        webbrowser.open("http://localhost:3001")  # Open local dev server
+    if "react-prod" in check_running.stdout:
+        print("\n🚀 Detected running React app in production mode. Opening browser...")
+        webbrowser.open("http://localhost:80")  # Open local production site
+
 # 🔹 Main Automation Workflow
 def main():
     print("🚀 Automating React app containerization with DeepSeek Coder v2 via Ollama...")
@@ -235,6 +262,9 @@ def main():
         push_to_docker_hub(docker_hub_user)
 
     print(f"🎉 Automation complete! React app containerized successfully from {repo_name}")
+
+    # 🔗 Open the relevant page in the browser
+    open_relevant_page(repo_name, docker_hub_user)
 
 if __name__ == "__main__":
     main()

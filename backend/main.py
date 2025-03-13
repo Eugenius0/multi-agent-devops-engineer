@@ -20,8 +20,9 @@ app.add_middleware(
 
 MODEL_NAME = "deepseek-coder-v2"  # Change to preferred model
 
-# Store task statuses
+# Store task statuses and LLM output
 task_status = {}
+llm_outputs = {}  # Dictionary to store LLM outputs
 
 class UserRequest(BaseModel):
     user_input: str
@@ -32,7 +33,6 @@ async def run_automation(request: UserRequest):
     """Uses DeepSeek Coder v2 to determine which automation to run and streams logs."""
     user_input = request.user_input
     repo_name = request.repo_name.strip()
-
 
     if not user_input or not repo_name:
         raise HTTPException(status_code=400, detail="User input and repo name are required")
@@ -66,8 +66,10 @@ async def run_automation(request: UserRequest):
     if intent not in ["GitHub Actions", "Docker", "GitLab CI/CD"]:
         return {"error": "LLM returned an unrecognized intent.", "llm_output": intent}
 
+    # Store the LLM response in a dictionary
     task_id = str(uuid.uuid4())
     task_status[task_id] = "Running"
+    llm_outputs[task_id] = response['message']['content'].strip()
 
     async def log_stream():
         """Streams logs dynamically to the UI with real-time output."""
@@ -91,9 +93,16 @@ async def run_automation(request: UserRequest):
 
     return StreamingResponse(log_stream(), media_type="text/event-stream")
 
+@app.get("/get-llm-output/{task_id}")
+async def get_llm_output(task_id: str):
+    """Fetches the stored LLM output for the given task ID."""
+    if task_id not in llm_outputs:
+        raise HTTPException(status_code=404, detail="Task ID not found or no LLM output available.")
+    
+    return {"llm_output": llm_outputs[task_id]}
+
 @app.post("/cancel-automation")
 async def cancel_automation():
     """Immediately stops any running automation task."""
     cancel_execution()  # Call function to stop execution
     return {"message": "Automation cancelled"}
-

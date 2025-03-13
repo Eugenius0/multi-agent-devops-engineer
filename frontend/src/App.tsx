@@ -155,7 +155,11 @@ export default function AutomationFrameworkUI() {
 
         {/* Execute Button with Loading Indicator */}
         <Button
-          className="w-full bg-black text-white px-4 py-2 rounded mt-4 hover:bg-gray-800 focus:ring focus:ring-gray-500 disabled:bg-gray-400 flex justify-center items-center"
+          className={`w-full text-white px-4 py-2 rounded mt-4 flex justify-center items-center ${
+            !command.trim() || !repoName.trim() || mutation.isPending
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-black hover:bg-gray-800 focus:ring focus:ring-gray-500"
+          }`}
           onClick={() => mutation.mutate({ cmd: command, repo: repoName })}
           disabled={!command.trim() || !repoName.trim() || mutation.isPending}
         >
@@ -181,6 +185,18 @@ export default function AutomationFrameworkUI() {
             </svg>
           ) : null}
           {mutation.isPending ? "Processing..." : "Execute"}
+        </Button>
+
+        <Button
+          className={`w-full text-white px-4 py-2 rounded mt-2 ${
+            isRunning
+              ? "bg-red-600 hover:bg-red-700"
+              : "bg-red-300 cursor-not-allowed"
+          }`}
+          onClick={() => {}}
+          disabled={!isRunning}
+        >
+          Cancel
         </Button>
 
         {/* Execution Timer Display */}

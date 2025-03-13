@@ -145,11 +145,11 @@ def commit_and_push_pipeline(repo_name):
 def open_github_actions_page(repo_name):
     """Automatically opens the GitLab Pipeline page in the browser."""
     github_actions_url = f"https://gitlab.com/{repo_name}/-/pipelines"
-    print("\n🔗 Opened GitLab pipeline in your default browser. \n")
+    print("\n🔗 Opened GitLab pipeline in your default browser.\n")
     webbrowser.open(github_actions_url)  # Open in the default web browser
 
 if __name__ == "__main__":
-    print("🚀 Automating GitLab CI/CD pipeline creation with DeepSeek Coder via Ollama...")
+    print("🚀 Automating GitLab CI/CD pipeline creation with DeepSeek Coder via Ollama...\n")
     
     repo_name = sys.argv[1]
     user_input = sys.argv[2]

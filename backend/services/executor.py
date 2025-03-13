@@ -3,17 +3,16 @@ from pathlib import Path
 import sys
 import time
 
-stop_execution = False  # Global flag for cancellation
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SCRIPTS_DIR = BASE_DIR / "automation_scripts"
 
 MAX_EXECUTION_TIME = 1000  # ⏳ Set execution time limit
 
 running_process = None  # 🔹 Store the running subprocess globally
+stop_execution = False  # 🔹 Global flag for cancellation
 
 def run_script(script_name, repo_name, user_input):
-    """Runs an automation script and streams its output, stopping immediately when cancelled."""
+    """Runs an automation script and stops immediately when cancelled."""
     global stop_execution
     stop_execution = False  # Reset cancellation flag at the start
 
@@ -29,15 +28,18 @@ def run_script(script_name, repo_name, user_input):
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True
     )
 
+    global running_process
+    running_process = process  # Store the active process
+
     for line in iter(process.stdout.readline, ''):
-        if stop_execution:  # Check if stop was requested
-            process.terminate()  # Kill the process
+        if stop_execution:  # If user cancels, terminate immediately
+            process.terminate()
             yield "ERROR: ❌ Execution Cancelled by User."
             return
 
         elapsed_time = time.time() - start_time
         if elapsed_time > MAX_EXECUTION_TIME:
-            process.terminate()  # 🛑 Kill process if it exceeds time limit
+            process.terminate()
             yield "ERROR: ❌ Execution stopped: Runtime Error."
             return
 
@@ -62,7 +64,9 @@ def run_script(script_name, repo_name, user_input):
 
 
 def cancel_execution():
-    """Sets the stop_execution flag to True, stopping ongoing execution."""
+    """Stops the running process and prevents further Git operations."""
     global stop_execution
     stop_execution = True
 
+    if running_process:
+        running_process.terminate()

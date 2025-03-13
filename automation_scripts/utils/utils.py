@@ -55,7 +55,7 @@ def clone_repo(repo_name, platform, change_dir=False):
         else:
             raise ValueError("❌ Invalid platform. Choose either 'github' or 'gitlab'.")
 
-        print(f"🚀 Cloning repository from {repo_url} ...")
+        print(f"\n🚀 Cloning repository from {repo_url} ...")
         return_code, _, stderr = run_command(f"git clone {repo_url}")
 
         if return_code != 0:

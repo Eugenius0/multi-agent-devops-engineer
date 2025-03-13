@@ -230,6 +230,7 @@ export default function AutomationFrameworkUI() {
             <pre className="text-xs text-gray-700 whitespace-pre-wrap">
               {executionStatus}
             </pre>
+            <div ref={logsEndRef} /> {/* ensures auto-scrolling */}
           </div>
         )}
 

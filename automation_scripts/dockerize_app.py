@@ -184,24 +184,47 @@ def commit_and_push_files():
     repo.index.add(["Dockerfile.dev", "Dockerfile", ".dockerignore", "docker-compose.yml"])
     repo.index.commit("Added Docker containerization setup")
     repo.remote(name="origin").push()
-    print("✅ Pushed containerization files to GitHub!")
+    print("✅ Pushed containerization files to GitHub!\n")
 
 # Build and Run Containers
 def build_and_run_containers():
-    """Builds and runs Docker containers using docker-compose."""
+    """Builds and runs Docker containers using docker-compose while filtering logs."""
     print("🚀 Building and running Docker containers...")
-    run_command("docker-compose up react-dev -d", capture_output=False)
-    run_command("docker-compose up react-prod -d", capture_output=False)
+
+    # Run react-dev container but filter out unnecessary logs
+    result_dev = run_command("docker-compose up react-dev -d", capture_output=True)
+    for line in result_dev[1].split("\n"):  # Process stdout
+        if not any(ignore in line for ignore in ["Created", "Starting", "Started"]):
+            print(line.strip())
+
+    # Run react-prod container but filter out unnecessary logs
+    result_prod = run_command("docker-compose up react-prod -d", capture_output=True)
+    for line in result_prod[1].split("\n"):  # Process stdout
+        if not any(ignore in line for ignore in ["Created", "Starting", "Started"]):
+            print(line.strip())
+
 
 # Push to Docker Hub (Optional)
 def push_to_docker_hub(username):
     """Tags and pushes the production image to Docker Hub."""
-    print("🚀 Pushing production image to Docker Hub...")
+    username = username.lower()
+    print("🚀 Pushing production image to Docker Hub...\n")
     tag_command = f"docker tag react-docker-app-react-prod {username}/react-docker-app"
     push_command = f"docker push {username}/react-docker-app"
 
+    # Execute Docker Tagging
     run_command(tag_command, capture_output=False)
-    run_command(push_command, capture_output=False)
+
+    # Execute Docker Push and filter the output
+    result = subprocess.run(push_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    # Extract only the final digest and summary
+    for line in result.stdout.split("\n"):
+        if "digest:" in line:  # ✅ Only keep the final summary line
+            print("✅ Docker Image Pushed\n")
+
+    if result.returncode != 0:
+        print(f"❌ Error pushing image: {result.stderr.strip()}")
 
 def open_relevant_page(repo_name, docker_hub_user=None):
     """Automatically opens the most relevant URL after automation."""
@@ -212,7 +235,7 @@ def open_relevant_page(repo_name, docker_hub_user=None):
 
     # If the app is running locally via docker-compose, open the local dev server
     if docker_hub_user:
-        docker_hub_url = f"https://hub.docker.com/r/{docker_hub_user}/react-docker-app"
+        docker_hub_url = "https://hub.docker.com"
         print(f"\n🔗 Opening Docker Hub Repository: {docker_hub_url}")
         webbrowser.open(docker_hub_url)
     else:
@@ -226,20 +249,20 @@ def open_relevant_page(repo_name, docker_hub_user=None):
         print("\n🚀 Detected running React app in development mode. Opening browser...")
         webbrowser.open("http://localhost:3001")  # Open local dev server
     if "react-prod" in check_running.stdout:
-        print("\n🚀 Detected running React app in production mode. Opening browser...")
+        print("\n🚀 Detected running React app in production mode. Opening browser...\n")
         webbrowser.open("http://localhost:80")  # Open local production site
 
 # 🔹 Main Automation Workflow
 def main():
-    print("🚀 Automating React app containerization with DeepSeek Coder v2 via Ollama...")
+    print("🚀 Automating React app containerization with DeepSeek Coder v2 via Ollama...\n")
 
     # Get the GitHub repository name from the user
     repo_name = sys.argv[1]
     user_input = sys.argv[2]
 
-    print(f"📂 Processing repository: {repo_name}")
+    print(f"📂 Processing repository: {repo_name}\n")
     
-    print("\n🚀 Cloning repository...")
+    print("🚀 Cloning repository...\n")
     clone_repo(repo_name, platform="github", change_dir=True)
 
     # Analyze project
@@ -250,21 +273,20 @@ def main():
     generate_docker_files(user_input)
 
     # Commit and push to GitHub
-    print("\n🔄 Committing and pushing workflow...")
+    print("\n🔄 Committing and pushing workflow...\n")
     commit_and_push_files()
 
     # Build and run the containerized app
     build_and_run_containers()
 
-    # Optional: Push the production image to Docker Hub
-    docker_hub_user = input("Enter your Docker Hub username (or press Enter to skip push): ")
-    if docker_hub_user:
-        push_to_docker_hub(docker_hub_user)
+    # Push the production image to Docker Hub
+    # docker_hub_user = input("Enter your Docker Hub username (or press Enter to skip push): ")
+    push_to_docker_hub("Eugenius00") # hardcoded for now
 
     print(f"🎉 Automation complete! React app containerized successfully from {repo_name}")
 
     # 🔗 Open the relevant page in the browser
-    open_relevant_page(repo_name, docker_hub_user)
+    open_relevant_page(repo_name, "Eugenius00")
 
 if __name__ == "__main__":
     main()

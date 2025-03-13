@@ -25,6 +25,7 @@ export default function AutomationFrameworkUI() {
   const [finalExecutionTime, setFinalExecutionTime] = useState<string | null>(
     null
   );
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Auto-scroll when executionStatus updates
   useEffect(() => {
@@ -120,16 +121,26 @@ export default function AutomationFrameworkUI() {
     },
   });
 
-  // Cancel Automation Immediately
   const handleCancel = async () => {
-    if (controllerRef.current) {
-      controllerRef.current.abort(); // Abort frontend fetch
+    if (isCancelling) return; // Prevent multiple cancel requests
+
+    setIsCancelling(true); // Indicate cancellation is in progress
+
+    try {
+      if (controllerRef.current) {
+        controllerRef.current.abort(); // Abort frontend fetch
+      }
+      await fetch("http://localhost:8000/cancel-automation", {
+        method: "POST",
+      });
+
+      setExecutionStatus("❌ Execution Cancelled.");
+    } catch (error) {
+      console.warn("Cancel request failed:", error);
+    } finally {
+      setIsRunning(false);
+      setIsCancelling(false); // Allow execution again after cancel is fully processed
     }
-
-    await fetch("http://localhost:8000/cancel-automation", { method: "POST" });
-
-    setExecutionStatus("❌ Execution Cancelled.");
-    setIsRunning(false);
   };
 
   return (
@@ -156,27 +167,37 @@ export default function AutomationFrameworkUI() {
         {/* Execute Button */}
         <Button
           className={`w-full text-white px-4 py-2 rounded mt-4 flex justify-center items-center ${
-            !command.trim() || !repoName.trim() || isRunning
+            !command.trim() ||
+            !repoName.trim() ||
+            mutation.isPending ||
+            isCancelling
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-black hover:bg-gray-800 focus:ring focus:ring-gray-500"
           }`}
           onClick={() => mutation.mutate({ cmd: command, repo: repoName })}
-          disabled={!command.trim() || !repoName.trim() || isRunning}
+          disabled={
+            !command.trim() ||
+            !repoName.trim() ||
+            mutation.isPending ||
+            isCancelling // ✅ Ensure execute button is disabled while cancelling
+          }
         >
-          {isRunning ? "Processing..." : "Execute"}
+          {mutation.isPending || isCancelling ? "Processing..." : "Execute"}
         </Button>
 
         {/* Cancel Button */}
         <Button
           className={`w-full text-white px-4 py-2 rounded mt-2 ${
-            isRunning
+            isCancelling
+              ? "bg-yellow-500 cursor-wait" // Yellow while cancelling
+              : isRunning
               ? "bg-red-600 hover:bg-red-700"
               : "bg-red-300 cursor-not-allowed"
           }`}
           onClick={handleCancel}
-          disabled={!isRunning}
+          disabled={!isRunning || isCancelling} // Prevent multiple cancels
         >
-          Cancel
+          {isCancelling ? "Cancelling..." : "Cancel"}
         </Button>
 
         {/* Execution Timer Display */}

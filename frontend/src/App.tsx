@@ -143,6 +143,32 @@ export default function AutomationFrameworkUI() {
     }
   };
 
+  let cancelButtonColor = "bg-red-300 cursor-not-allowed"; // Default
+
+  if (isCancelling) {
+    cancelButtonColor = "bg-yellow-500 cursor-wait";
+  } else if (isRunning) {
+    cancelButtonColor = "bg-red-600 hover:bg-red-700";
+  }
+
+  const cancelButtonText = isCancelling ? "Cancelling..." : "Cancel";
+
+  let executionTimerDisplay = null;
+
+  if (finalExecutionTime) {
+    executionTimerDisplay = (
+      <div className="mt-4 text-center text-gray-600 text-sm">
+        ⏳ Total Execution Time: {finalExecutionTime}
+      </div>
+    );
+  } else if (isRunning) {
+    executionTimerDisplay = (
+      <div className="mt-4 text-center text-gray-600 text-sm">
+        ⏳ Execution Time: {elapsedTime} seconds
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-300 p-6">
       <div className="w-full max-w-lg h-full bg-white shadow-lg rounded-lg p-6 overflow-y-auto">
@@ -187,29 +213,15 @@ export default function AutomationFrameworkUI() {
 
         {/* Cancel Button */}
         <Button
-          className={`w-full text-white px-4 py-2 rounded mt-2 ${
-            isCancelling
-              ? "bg-yellow-500 cursor-wait" // Yellow while cancelling
-              : isRunning
-              ? "bg-red-600 hover:bg-red-700"
-              : "bg-red-300 cursor-not-allowed"
-          }`}
+          className={`w-full text-white px-4 py-2 rounded mt-2 ${cancelButtonColor}`}
           onClick={handleCancel}
           disabled={!isRunning || isCancelling} // Prevent multiple cancels
         >
-          {isCancelling ? "Cancelling..." : "Cancel"}
+          {cancelButtonText}
         </Button>
 
         {/* Execution Timer Display */}
-        {finalExecutionTime ? (
-          <div className="mt-4 text-center text-gray-600 text-sm">
-            ⏳ Total Execution Time: {finalExecutionTime}
-          </div>
-        ) : isRunning ? (
-          <div className="mt-4 text-center text-gray-600 text-sm">
-            ⏳ Execution Time: {elapsedTime} seconds
-          </div>
-        ) : null}
+        {executionTimerDisplay}
 
         {/* Execution Status */}
         {executionStatus && (

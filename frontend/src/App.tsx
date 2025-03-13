@@ -5,7 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 export default function AutomationFrameworkUI() {
   const [command, setCommand] = useState("");
   const [repoName, setRepoName] = useState("");
-  const [executionStatus, setExecutionStatus] = useState(""); // Keep execution status visible
+  const [executionStatus, setExecutionStatus] = useState("");
   const [logs, setLogs] = useState<
     {
       taskId: string;
@@ -16,12 +16,12 @@ export default function AutomationFrameworkUI() {
     }[]
   >([]);
 
-  const logsEndRef = useRef<HTMLDivElement>(null); // 🔹 Ref for scrolling
+  const logsEndRef = useRef<HTMLDivElement>(null);
+  const controllerRef = useRef<AbortController | null>(null);
 
-  // Timer State
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [isRunning, setIsRunning] = useState(false); // Track timer state
+  const [isRunning, setIsRunning] = useState(false);
   const [finalExecutionTime, setFinalExecutionTime] = useState<string | null>(
     null
   );
@@ -39,7 +39,7 @@ export default function AutomationFrameworkUI() {
 
     if (isRunning && startTime !== null) {
       interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - startTime) / 1000)); // Update elapsed time in seconds
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
     }
 
@@ -50,38 +50,37 @@ export default function AutomationFrameworkUI() {
     };
   }, [isRunning, startTime]);
 
-  // Function to determine executed task name
   const getExecutedTaskName = (rawOutput: string) => {
-    if (rawOutput.includes("GitHub")) {
+    if (rawOutput.includes("GitHub"))
       return "✅ Creation of GitHub Actions pipeline";
-    } else if (rawOutput.includes("Docker")) {
+    if (rawOutput.includes("Docker"))
       return "✅ Containerization of your app with Docker";
-    } else if (rawOutput.includes("GitLab")) {
+    if (rawOutput.includes("GitLab"))
       return "✅ Creation of GitLab CI/CD pipeline";
-    }
-    return "✅ Executed your indicated automation task"; // Fallback if unknown
+    return "✅ Executed your indicated automation task";
   };
 
-  // Send command and repoName to FastAPI backend and stream logs
+  // Start Automation Mutation
   const mutation = useMutation({
     mutationFn: async ({ cmd, repo }: { cmd: string; repo: string }) => {
-      // ⏳ Clear previous execution status and start timer
       setExecutionStatus("");
       setElapsedTime(0);
       setStartTime(Date.now());
       setIsRunning(true);
-      setFinalExecutionTime(null); // Reset final execution time for new execution
+      setFinalExecutionTime(null);
+
+      controllerRef.current = new AbortController();
 
       const response = await fetch("http://localhost:8000/run-automation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_input: cmd, repo_name: repo }),
+        signal: controllerRef.current.signal, // Attach abort signal
       });
 
       if (!response.ok) throw new Error("Failed to execute automation");
 
-      const taskId = crypto.randomUUID(); // Generate a task ID for tracking
-
+      const taskId = crypto.randomUUID();
       const reader = response.body?.getReader();
       if (!reader) throw new Error("No response stream available");
 
@@ -93,17 +92,13 @@ export default function AutomationFrameworkUI() {
         if (done) break;
 
         newOutput += decoder.decode(value, { stream: true });
-
-        setExecutionStatus(newOutput); // Keep live execution logs visible
+        setExecutionStatus(newOutput);
       }
 
       setIsRunning(false);
       setFinalExecutionTime(`${elapsedTime} seconds`);
 
-      // Extract readable task name
       const executedTask = getExecutedTaskName(newOutput);
-
-      // Store completed execution in history with correct execution time
       setLogs((prevLogs) => [
         {
           taskId,
@@ -116,21 +111,26 @@ export default function AutomationFrameworkUI() {
       ]);
     },
     onError: (error) => {
-      setExecutionStatus("❌ Error occurred during execution.");
+      if (error.name === "AbortError") {
+        setExecutionStatus("❌ Execution Cancelled.");
+      } else {
+        setExecutionStatus("❌ Error occurred during execution.");
+      }
       setIsRunning(false);
-      setFinalExecutionTime(null);
-      setLogs((prevLogs) => [
-        {
-          taskId: "N/A",
-          status: "Error",
-          executedTask: "N/A",
-          timestamp: new Date().toLocaleString(),
-          executionTime: "N/A",
-        },
-        ...prevLogs,
-      ]);
     },
   });
+
+  // Cancel Automation Immediately
+  const handleCancel = async () => {
+    if (controllerRef.current) {
+      controllerRef.current.abort(); // Abort frontend fetch
+    }
+
+    await fetch("http://localhost:8000/cancel-automation", { method: "POST" });
+
+    setExecutionStatus("❌ Execution Cancelled.");
+    setIsRunning(false);
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-300 p-6">
@@ -153,47 +153,27 @@ export default function AutomationFrameworkUI() {
           onChange={(e) => setRepoName(e.target.value)}
         />
 
-        {/* Execute Button with Loading Indicator */}
+        {/* Execute Button */}
         <Button
           className={`w-full text-white px-4 py-2 rounded mt-4 flex justify-center items-center ${
-            !command.trim() || !repoName.trim() || mutation.isPending
+            !command.trim() || !repoName.trim() || isRunning
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-black hover:bg-gray-800 focus:ring focus:ring-gray-500"
           }`}
           onClick={() => mutation.mutate({ cmd: command, repo: repoName })}
-          disabled={!command.trim() || !repoName.trim() || mutation.isPending}
+          disabled={!command.trim() || !repoName.trim() || isRunning}
         >
-          {mutation.isPending ? (
-            <svg
-              className="animate-spin h-5 w-5 mr-2 text-white"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8H4z"
-              />
-            </svg>
-          ) : null}
-          {mutation.isPending ? "Processing..." : "Execute"}
+          {isRunning ? "Processing..." : "Execute"}
         </Button>
 
+        {/* Cancel Button */}
         <Button
           className={`w-full text-white px-4 py-2 rounded mt-2 ${
             isRunning
               ? "bg-red-600 hover:bg-red-700"
               : "bg-red-300 cursor-not-allowed"
           }`}
-          onClick={() => {}}
+          onClick={handleCancel}
           disabled={!isRunning}
         >
           Cancel
@@ -210,14 +190,13 @@ export default function AutomationFrameworkUI() {
           </div>
         ) : null}
 
-        {/* Execution Status (Live & Persistent) */}
+        {/* Execution Status */}
         {executionStatus && (
           <div className="mt-6 p-3 bg-blue-100 border border-blue-300 rounded-lg shadow-sm max-h-60 overflow-y-auto ">
             <h3 className="text-lg font-semibold">Execution Status</h3>
             <pre className="text-xs text-gray-700 whitespace-pre-wrap">
               {executionStatus}
             </pre>
-            <div ref={logsEndRef} /> {/* ensures auto-scrolling */}
           </div>
         )}
 

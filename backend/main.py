@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import ollama
 import uuid
 import ast
-from services.executor import run_script
+from services.executor import cancel_execution, run_script
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -90,4 +90,10 @@ async def run_automation(request: UserRequest):
         yield "✅ Task Completed!"
 
     return StreamingResponse(log_stream(), media_type="text/event-stream")
+
+@app.post("/cancel-automation")
+async def cancel_automation():
+    """Immediately stops any running automation task."""
+    cancel_execution()  # Call function to stop execution
+    return {"message": "Automation cancelled"}
 

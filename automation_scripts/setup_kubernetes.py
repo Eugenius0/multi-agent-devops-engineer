@@ -18,6 +18,13 @@ def extract_yaml(text):
     yaml_blocks = re.findall(r"```yaml(.*?)```", text, re.DOTALL)
     return yaml_blocks[0].strip() if yaml_blocks else text.strip()
 
+def is_minikube():
+    """Checks if the cluster is running on Minikube."""
+    return "minikube" in run_command("kubectl config current-context")[1]
+
+# Adjust service type based on environment
+service_type = "NodePort" if is_minikube() else "LoadBalancer"
+
 def generate_kubernetes_yaml(repo_name, user_input, filename, attempt=1, last_yaml=""):
     """Generates a valid Kubernetes YAML file using LLM with retries."""
     MAX_RETRIES = 3
@@ -35,12 +42,26 @@ def generate_kubernetes_yaml(repo_name, user_input, filename, attempt=1, last_ya
     - Your response **must be valid YAML** (no explanations or markdown).
     - Ensure the output **strictly follows Kubernetes YAML syntax**.
     - The filename must match `{filename}`.
-    - To know what to generate, analyze the repository contents: {files}
-    - Consider the "User Request: {user_input}".
+    - To determine what to generate, analyze the repository contents: {files}
+    - Consider the **user request**: `{user_input}`.
+    - **Service Configuration:**
+      - Use `type: {service_type}` for services.
+      - If `service_type` is `NodePort`, explicitly define a `nodePort` in the **30000-32767** range.
+      - Ensure that the `selector` field **correctly matches** the corresponding deployment labels.
+    - **Port Mapping Best Practices:**
+      - **Frontend Services:**  
+        - Expose port **80** externally and forward it to **3000** (React apps).
+      - **Backend Services:**  
+        - Expose port **80** externally and forward it to **5000** or **8080** (common backend ports).
+    - **Deployment & Minikube Compatibility:**
+      - Ensure all deployments and services are properly configured to work within a **Minikube cluster**.
+      - Avoid `LoadBalancer` for Minikube environments unless necessary. Prefer `NodePort`.
+      - Validate that service ports correctly forward traffic to the matching deployment containers.
 
     **Generate ONE valid `{filename}` below:**
     ```yaml
     """
+
 
     cmd = ["ollama", "run", MODEL_NAME]
 
@@ -168,26 +189,49 @@ def scale_backend():
     logging.info("✅ Backend scaled.")
 
 import subprocess
+import logging
 
 def get_frontend_url():
-    """Runs the Minikube command to get the frontend service URL and prints its output without getting stuck."""
+    """Runs the Minikube command to get the frontend service URL and returns the raw output."""
     logging.info("🚀 Fetching frontend service URL...")
 
     try:
-        # ✅ Run Minikube command synchronously
-        return_code, output, stderr = run_command("minikube service frontend-service --url", capture_output=True)
+        # ✅ Run Minikube command and capture output in real-time
+        process = subprocess.Popen(
+            ["minikube", "service", "frontend-service", "--url"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1  # Unbuffered output (real-time streaming)
+        )
 
-        if return_code == 0 and output:
-            logging.info(f"✅ Minikube Output: {output}")
-            print(f"\n🎉 Minikube Output:\n{output}\n")
-            return output  # Return the raw output
+        output_lines = []
+
+        # ✅ Read and print output line by line
+        for line in iter(process.stdout.readline, ''):
+            print(line, end="")  # Show in terminal
+            output_lines.append(line.strip())  # Store all output lines
+
+        # ✅ Capture error messages if any
+        error_output = process.stderr.read().strip()
+        
+        # ✅ Combine all output into a final result
+        full_output = "\n".join(output_lines)
+
+        run_command("minikube dashboard", capture_output=False)  # Open Minikube dashboard in browser
+
+        if process.returncode == 0:
+            logging.info(f"✅ Minikube Output:\n{full_output}")
+            return full_output  # Return everything Minikube prints
         else:
-            logging.error(f"❌ Minikube command failed: {stderr}")
-            print("❌ Minikube command failed. Check if Minikube and the service are running.")
-            return None
+            logging.error(f"❌ Minikube command failed: {error_output}")
+            return error_output  # Return stderr for debugging
+
     except Exception as e:
         logging.error(f"❌ Unexpected error in get_frontend_url: {e}")
-        return None
+        return str(e)  # Return exception message for debugging
+
+
 
 
 if __name__ == "__main__":

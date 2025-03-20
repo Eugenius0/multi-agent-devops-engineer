@@ -60,6 +60,8 @@ export default function AutomationFrameworkUI() {
       return "✅ Containerization of your app with Docker";
     if (rawOutput.includes("GitLab"))
       return "✅ Creation of GitLab CI/CD pipeline";
+    if (rawOutput.includes("Kubernetes"))
+      return "✅ Deployment of your app to Kubernetes";
     return "✅ Executed your indicated automation task";
   };
 

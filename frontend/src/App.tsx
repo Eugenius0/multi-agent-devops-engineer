@@ -51,17 +51,8 @@ export default function AutomationFrameworkUI() {
     };
   }, [isRunning, startTime]);
 
-  const getExecutedTaskName = (rawOutput: string) => {
-    if (rawOutput.includes("AWS")) return "✅ Deployment of your app to Cloud";
-    if (rawOutput.includes("GitHub"))
-      return "✅ Creation of GitHub Actions pipeline";
-    if (rawOutput.includes("Docker"))
-      return "✅ Containerization of your app with Docker";
-    if (rawOutput.includes("GitLab"))
-      return "✅ Creation of GitLab CI/CD pipeline";
-    if (rawOutput.includes("Kubernetes"))
-      return "✅ Deployment of your app to Kubernetes";
-    return "✅ Executed your indicated automation task";
+  const getExecutedTaskName = (_rawOutput: string) => {
+    return "🤖 AI DevOps Agent completed the requested automation";
   };
 
   // Start Automation Mutation

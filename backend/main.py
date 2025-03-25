@@ -47,12 +47,14 @@ async def run_automation(request: UserRequest):
         - `Docker`
         - `GitLab CI/CD`
         - `Kubernetes`
+        - `Cloud`
         
         **Rules:**
         - If the user mentions **GitHub Actions**, return **GitHub Actions**.
         - If the user mentions **Docker**, return **Docker**.
         - If the user mentions **GitLab pipeline** or **GitLab CI/CD**, return **GitLab CI/CD**.
         - If the request involves **Kubernetes**, **k8s**, **kubectl**, or **Minikube**, return **Kubernetes**
+        - If the request involves **AWS**, **EC2**, **Pulumi**, or **cloud deployment**, return **Cloud**.
         - Do NOT return explanations or any extra text—**ONLY return the exact option.**
         
         **User Request:**
@@ -65,7 +67,7 @@ async def run_automation(request: UserRequest):
     except (SyntaxError, ValueError):
         intent = response['message']['content'].strip()
 
-    if intent not in ["GitHub Actions", "Docker", "GitLab CI/CD", "Kubernetes"]:
+    if intent not in ["GitHub Actions", "Docker", "GitLab CI/CD", "Kubernetes", "Cloud"]:
         return {"error": "LLM returned an unrecognized intent.", "llm_output": intent}
 
     # Store the LLM response in a dictionary
@@ -83,6 +85,8 @@ async def run_automation(request: UserRequest):
             script_name = "setup_gitlab_ci.py"
         elif intent == "Kubernetes":
             script_name = "setup_kubernetes.py"
+        elif intent == "Cloud":
+            script_name = "deploy_to_cloud.py"
         else:
             script_name = "setup_github_actions.py"
 

@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+/backend/.github/workflows/ci.yml
+/backend/.github/workflows/main.yml <<EOF

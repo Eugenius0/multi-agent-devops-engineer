@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useRef, useState } from "react";
-import { Button, Dialog, Input, Transition } from "@headlessui/react";
+import { useEffect, useRef, useState } from "react";
+import { Button, Input } from "@headlessui/react";
 import { useMutation } from "@tanstack/react-query";
 
 export default function AutomationFrameworkUI() {
@@ -26,8 +26,6 @@ export default function AutomationFrameworkUI() {
     null
   );
   const [isCancelling, setIsCancelling] = useState(false);
-  const [generatedLLMOutput, setGeneratedLLMOutput] = useState(""); // Store LLM output
-  const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal
 
   // Auto-scroll when executionStatus updates
   useEffect(() => {
@@ -54,6 +52,7 @@ export default function AutomationFrameworkUI() {
   }, [isRunning, startTime]);
 
   const getExecutedTaskName = (rawOutput: string) => {
+    if (rawOutput.includes("AWS")) return "✅ Deployment of your app to Cloud";
     if (rawOutput.includes("GitHub"))
       return "✅ Creation of GitHub Actions pipeline";
     if (rawOutput.includes("Docker"))
@@ -72,7 +71,6 @@ export default function AutomationFrameworkUI() {
       setElapsedTime(0);
       setStartTime(Date.now());
       setIsRunning(true);
-      setGeneratedLLMOutput("");
       setFinalExecutionTime(null);
 
       controllerRef.current = new AbortController();
@@ -85,10 +83,6 @@ export default function AutomationFrameworkUI() {
       });
 
       if (!response.ok) throw new Error("Failed to execute automation");
-
-      const llmOutput =
-        response.headers.get("LLM-Output") ?? "No output from LLM";
-      setGeneratedLLMOutput(llmOutput); // Store in state
 
       const taskId = crypto.randomUUID();
       const reader = response.body?.getReader();
@@ -105,7 +99,6 @@ export default function AutomationFrameworkUI() {
         setExecutionStatus(newOutput);
       }
 
-      setIsModalOpen(true);
       setIsRunning(false);
       setFinalExecutionTime(`${elapsedTime} seconds`);
 
@@ -220,62 +213,6 @@ export default function AutomationFrameworkUI() {
         >
           {mutation.isPending || isCancelling ? "Processing..." : "Execute"}
         </Button>
-
-        {/* 🔹 Button to Open the Modal 🔹 */}
-        <Button
-          className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
-          onClick={() => setIsModalOpen(true)}
-        >
-          Show LLM Output
-        </Button>
-
-        {/* 🔹 Modal for LLM Output 🔹 */}
-        <Transition appear show={isModalOpen} as={Fragment}>
-          <Dialog
-            as="div"
-            className="relative z-50"
-            onClose={() => setIsModalOpen(false)}
-          >
-            {/* Background Overlay */}
-            <Transition
-              show={isModalOpen} // ✅ Ensure this Transition has `show` prop
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-            >
-              <div className="fixed inset-0 bg-black bg-opacity-50" />
-            </Transition>
-
-            <div className="fixed inset-0 flex items-center justify-center p-4">
-              <Transition
-                show={isModalOpen} // ✅ Ensure this Transition has `show` prop
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-              >
-                {/* ✅ Replaced `Dialog.Panel` with a regular `div` */}
-                <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    📝 LLM Generated Output
-                  </h2>
-
-                  <pre className="mt-4 p-3 bg-gray-100 border border-gray-300 rounded-lg">
-                    {generatedLLMOutput || "No output available yet."}
-                  </pre>
-
-                  <Button
-                    className="bg-gray-600 text-white px-4 py-2 rounded mt-4"
-                    onClick={() => setIsModalOpen(false)}
-                  >
-                    Close
-                  </Button>
-                </div>
-              </Transition>
-            </div>
-          </Dialog>
-        </Transition>
 
         {/* Cancel Button */}
         <Button

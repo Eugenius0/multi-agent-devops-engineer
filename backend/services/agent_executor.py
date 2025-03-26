@@ -4,7 +4,6 @@ import re
 
 # 👉 Set this to your GitHub username or load from .env/config
 GITHUB_USER = "eugenius0"
-
 MODEL_NAME = "deepseek-coder-v2"  # Change to preferred model
 
 def run_shell_command(cmd):
@@ -35,8 +34,7 @@ def parse_action(output):
     elif "```bash" in output:
         match = re.search(r"```bash\n(.*?)```", output, re.DOTALL)
         if match:
-            commands = match.group(1).strip()
-            return "commands", commands
+            return "commands", match.group(1).strip()
 
     elif "```yaml" in output:
         match = re.search(r"```yaml\n(.*?)```", output, re.DOTALL)
@@ -45,6 +43,10 @@ def parse_action(output):
 
     elif "```done" in output:
         return "done", None
+
+    # Fallback for raw shell commands (unwrapped)
+    if re.match(r"^(git|npm|mkdir|touch|cd|rm|echo|python|bash)", output.strip(), re.IGNORECASE):
+        return "commands", output.strip()
 
     return "unknown", output
 
@@ -82,57 +84,59 @@ def build_prompt(user_input, repo_name):
     repo_tree = get_repo_overview(meta["local_path"]) if meta["is_cloned"] else "[Not cloned yet]"
 
     return f"""
-You are an autonomous AI DevOps agent.
+You are an autonomous AI DevOps engineer that plans and executes tasks step by step.
 
-Your task is to figure out how to fulfill the user's request by reasoning step-by-step and executing actions as needed.
+Your job is to fulfill the user's request by reasoning through each step (Thought), choosing the right action (Action), and observing the result (Result).
 
-You MUST decide what to do at each step: clone the repo if needed, create files, run commands, etc.
+Each step MUST follow this format:
 
-🧠 USER REQUEST:
-{user_input}
+Thought: <reasoning>
+Action:
+```bash
+<shell command>
+OR:
+Action:
+<file content>
+✅ **RULES:**
 
-ℹ️ REPO METADATA:
-- Repo Name: {meta['repo_name']}
-- Local Dir: {meta['repo_dir']}
-- Platform: {meta['platform']}
-- Already Cloned: {"✅ Yes" if meta['is_cloned'] else "❌ No"}
-- Repo URL: {meta['repo_url']}
-- Current Working Directory: {os.getcwd()}
+- DO NOT explain outside the `Thought:` section.
+- DO NOT use markdown formatting like `yaml` or `json`.
+- DO NOT include placeholders like `<shell command>`.
+- Use **ONLY** `bash` or `file:` blocks for `Action`.
+- DO NOT repeat previous actions.
+- Use `file:` blocks instead of `echo > filename`.
+- When all required steps are done, respond with:
 
-📁 Current Project Structure:
-{repo_tree}
-
-✅ RULES:
-- DO NOT include explanations or markdown formatting.
-- DO NOT include yaml or json.
-- Use ONLY `bash` or `file:` blocks.
-- Do NOT use placeholders like `<shell command>`.
-- Do NOT repeat actions (like re-cloning).
-- Do NOT use `cd` unless absolutely necessary (you’re likely already in the right folder).
-- DO NOT use 'echo ... > file' to write files. Use ```file: blocks instead.
-- When you are fully done, respond with:
-
-```done
-"""
+User Request: {user_input}
+Repository structure: {repo_tree}"""
 
 def run_agent_loop(repo_name, user_input):
     prompt = build_prompt(user_input, repo_name)
     history = prompt
-
-    for _ in range(1):  # Avoid infinite loops
+    executed_steps = set()
+    for _ in range(10):  # Limit to avoid infinite loops
         llm_output = call_llm(history)
         yield f"\n🧠 LLM Output:\n{llm_output}\n"
 
         action_type, payload = parse_action(llm_output)
 
+        # Prevent duplicate actions
+        if action_type in ["commands", "file"] and payload in executed_steps:
+            yield "\n⏩ Skipping repeated action.\n"
+            continue
+        executed_steps.add(payload)
+
         if action_type == "commands":
-            yield from handle_commands(payload)
-            history += f"\nResult:\nExecuted commands:\n{payload}\n"
+            result_output = ""
+            for output in handle_commands(payload):
+                yield output
+                result_output += output
+            history += f"\n{llm_output}\nResult:\n{result_output.strip()}\n"
 
         elif action_type == "file":
             result = handle_file(payload)
             yield result
-            history += f"\nResult:\n{result}\n"
+            history += f"\n{llm_output}\nResult:\n{result.strip()}\n"
 
         elif action_type == "done":
             yield "\n🎉 Task complete!"

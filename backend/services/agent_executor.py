@@ -3,7 +3,6 @@ import logging
 import os
 import ollama
 import uuid
-import time
 import subprocess
 
 # Shared dictionary to manage pending approvals
@@ -26,9 +25,12 @@ async def run_agent_loop(repo_name: str, user_input: str):
             "- Always start by cloning the GitHub repository before anything else.\n"
             "- Use the default username and repo name provided below.\n"
             "- Use this command format exactly:\n"
-            "  Action: git clone https://github.com/eugenius0/<repo>.git\n\n" #eugenius0 is the hardcoded username
-            "- Use `nano` to create or edit files (do not use echo).\n"
+            "  Action: git clone https://github.com/eugenius0/<repo>.git unless its a gitlab repo then do https://gitlab.com/<repo>.git\n\n" #eugenius0 is the hardcoded username
+            "- Do NOT use `nano`. Instead, write files using shell redirection like echo or heredoc (cat <<EOF ...).\n"
+            "- Do NOT use `cd` commands. The system already executes each command in the correct working directory.\n"
             "- Only provide raw shell commands in the Action line, no markdown or explanation.\n"
+            "After writing or modifying any file, make sure to run the following to save changes: 1. git add . 2. git commit -m your message 3. git push origin main."
+            "Do this at the end of the task to finalize the automation."
             "- Wait for user approval after every Action before proceeding.\n"
             "- End the process with: Final Answer: ... when done."
         )

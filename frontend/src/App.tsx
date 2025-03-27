@@ -199,7 +199,7 @@ export default function AutomationFrameworkUI() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-300 p-6">
       <div className="w-full max-w-lg h-full bg-white shadow-lg rounded-lg p-6 overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4">Automation Framework</h2>
+        <h2 className="text-2xl font-bold mb-4">Eugenius AI Devops Engineer</h2>
 
         <Input
           type="text"

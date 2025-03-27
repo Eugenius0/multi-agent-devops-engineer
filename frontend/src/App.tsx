@@ -26,6 +26,10 @@ export default function AutomationFrameworkUI() {
     null
   );
   const [isCancelling, setIsCancelling] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState<{
+    taskId: string;
+    action: string;
+  } | null>(null);
 
   // Auto-scroll when executionStatus updates
   useEffect(() => {
@@ -55,7 +59,30 @@ export default function AutomationFrameworkUI() {
     return "🤖 AI DevOps Agent completed the requested automation";
   };
 
-  // Start Automation Mutation
+  const parseApprovalTag = (line: string) => {
+    const approvalRegex = /\[ApprovalRequired\]\s(.+?)\s→\s(.+)/;
+    const match = approvalRegex.exec(line);
+    if (match) {
+      return { taskId: match[1], action: match[2] };
+    }
+    return null;
+  };
+
+  const sendApproval = async (approved: boolean) => {
+    if (!pendingApproval) return;
+    const { taskId } = pendingApproval;
+    try {
+      await fetch("http://localhost:8000/approve-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task_id: taskId, approved }),
+      });
+      setPendingApproval(null);
+    } catch (err) {
+      console.error("Failed to send approval:", err);
+    }
+  };
+
   const mutation = useMutation({
     mutationFn: async ({ cmd, repo }: { cmd: string; repo: string }) => {
       setExecutionStatus("");
@@ -70,7 +97,7 @@ export default function AutomationFrameworkUI() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_input: cmd, repo_name: repo }),
-        signal: controllerRef.current.signal, // Attach abort signal
+        signal: controllerRef.current.signal,
       });
 
       if (!response.ok) throw new Error("Failed to execute automation");
@@ -86,8 +113,14 @@ export default function AutomationFrameworkUI() {
         const { value, done } = await reader.read();
         if (done) break;
 
-        newOutput += decoder.decode(value, { stream: true });
+        const chunk = decoder.decode(value, { stream: true });
+        newOutput += chunk;
         setExecutionStatus(newOutput);
+
+        const approval = parseApprovalTag(chunk);
+        if (approval) {
+          setPendingApproval(approval);
+        }
       }
 
       setIsRunning(false);
@@ -116,13 +149,13 @@ export default function AutomationFrameworkUI() {
   });
 
   const handleCancel = async () => {
-    if (isCancelling) return; // Prevent multiple cancel requests
+    if (isCancelling) return;
 
-    setIsCancelling(true); // Indicate cancellation is in progress
+    setIsCancelling(true);
 
     try {
       if (controllerRef.current) {
-        controllerRef.current.abort(); // Abort frontend fetch
+        controllerRef.current.abort();
       }
       await fetch("http://localhost:8000/cancel-automation", {
         method: "POST",
@@ -133,11 +166,11 @@ export default function AutomationFrameworkUI() {
       console.warn("Cancel request failed:", error);
     } finally {
       setIsRunning(false);
-      setIsCancelling(false); // Allow execution again after cancel is fully processed
+      setIsCancelling(false);
     }
   };
 
-  let cancelButtonColor = "bg-red-300 cursor-not-allowed"; // Default
+  let cancelButtonColor = "bg-red-300 cursor-not-allowed";
 
   if (isCancelling) {
     cancelButtonColor = "bg-yellow-500 cursor-wait";
@@ -168,7 +201,6 @@ export default function AutomationFrameworkUI() {
       <div className="w-full max-w-lg h-full bg-white shadow-lg rounded-lg p-6 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">Automation Framework</h2>
 
-        {/* Input Fields */}
         <Input
           type="text"
           className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-gray-500"
@@ -184,7 +216,6 @@ export default function AutomationFrameworkUI() {
           onChange={(e) => setRepoName(e.target.value)}
         />
 
-        {/* Execute Button */}
         <Button
           className={`w-full text-white px-4 py-2 rounded mt-4 flex justify-center items-center ${
             !command.trim() ||
@@ -199,36 +230,63 @@ export default function AutomationFrameworkUI() {
             !command.trim() ||
             !repoName.trim() ||
             mutation.isPending ||
-            isCancelling // ✅ Ensure execute button is disabled while cancelling
+            isCancelling
           }
         >
           {mutation.isPending || isCancelling ? "Processing..." : "Execute"}
         </Button>
 
-        {/* Cancel Button */}
         <Button
           className={`w-full text-white px-4 py-2 rounded mt-2 ${cancelButtonColor}`}
           onClick={handleCancel}
-          disabled={!isRunning || isCancelling} // Prevent multiple cancels
+          disabled={!isRunning || isCancelling}
         >
           {cancelButtonText}
         </Button>
 
-        {/* Execution Timer Display */}
         {executionTimerDisplay}
 
-        {/* Execution Status */}
         {executionStatus && (
-          <div className="mt-6 p-3 bg-blue-100 border border-blue-300 rounded-lg shadow-sm max-h-60 overflow-y-auto ">
+          <div className="mt-6 p-3 bg-blue-100 border border-blue-300 rounded-lg shadow-sm max-h-60 overflow-y-auto">
             <h3 className="text-lg font-semibold">Execution Status</h3>
             <pre className="text-xs text-gray-700 whitespace-pre-wrap">
               {executionStatus}
             </pre>
-            <div ref={logsEndRef} /> {/* ensures auto-scrolling */}
+            <div ref={logsEndRef} />
           </div>
         )}
 
-        {/* Execution History */}
+        {pendingApproval && (
+          <div className="mt-4 p-4 border border-yellow-400 bg-yellow-100 rounded-md shadow-sm">
+            <p className="text-sm font-medium mb-2">
+              🛑 Awaiting approval for:
+            </p>
+            <code className="text-xs block mb-3 text-gray-700 whitespace-pre-wrap">
+              {pendingApproval.action}
+            </code>
+            <div className="flex gap-2">
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                onClick={() => {
+                  console.log("✅ Approve clicked");
+                  sendApproval(true);
+                }}
+              >
+                ✅ Approve
+              </Button>
+              <Button
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                onClick={() => {
+                  console.log("❌ Reject clicked");
+                  sendApproval(false);
+                }}
+              >
+                ❌ Reject
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="mt-6 max-h-60 overflow-y-auto">
           <h3 className="text-lg font-semibold mb-2">Execution History</h3>
           {logs.length === 0 ? (

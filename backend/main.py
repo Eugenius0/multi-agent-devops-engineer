@@ -32,6 +32,7 @@ class UserRequest(BaseModel):
 class ApprovalRequest(BaseModel):
     task_id: str
     approved: bool
+    edited_command: str | None = None  # Allow user-edited command
 
 @app.post("/run-automation")
 async def run_automation(request: UserRequest):
@@ -60,14 +61,20 @@ async def run_automation(request: UserRequest):
 
 @app.post("/approve-action")
 async def approve_action(request: ApprovalRequest):
-    """Handles approval or rejection of an action from the frontend."""
-    print("✅ Received approval for:", request.task_id, request.approved)
     task_id = request.task_id
     if task_id not in approval_queue:
         raise HTTPException(status_code=404, detail="Task ID not found or already processed.")
-    
+
+    if request.edited_command and request.approved:
+        approval_queue[task_id]["action"] = request.edited_command  # Save new command
+
     approval_queue[task_id]["approved"] = request.approved
-    return {"status": "acknowledged", "task_id": task_id, "approved": request.approved}
+    return {
+        "status": "acknowledged",
+        "task_id": task_id,
+        "approved": request.approved,
+        "used_command": approval_queue[task_id]["action"]
+    }
 
 @app.get("/get-llm-output/{task_id}")
 async def get_llm_output(task_id: str):

@@ -30,6 +30,7 @@ export default function AutomationFrameworkUI() {
     taskId: string;
     action: string;
   } | null>(null);
+  const [editedAction, setEditedAction] = useState<string>("");
 
   // Auto-scroll when executionStatus updates
   useEffect(() => {
@@ -75,7 +76,11 @@ export default function AutomationFrameworkUI() {
       await fetch("http://localhost:8000/approve-action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task_id: taskId, approved }),
+        body: JSON.stringify({
+          task_id: taskId,
+          approved,
+          edited_command: editedAction,
+        }),
       });
       setPendingApproval(null);
     } catch (err) {
@@ -120,6 +125,7 @@ export default function AutomationFrameworkUI() {
         const approval = parseApprovalTag(chunk);
         if (approval) {
           setPendingApproval(approval);
+          setEditedAction(approval.action);
         }
       }
 
@@ -261,9 +267,12 @@ export default function AutomationFrameworkUI() {
             <p className="text-sm font-medium mb-2">
               🛑 Awaiting approval for:
             </p>
-            <code className="text-xs block mb-3 text-gray-700 whitespace-pre-wrap">
-              {pendingApproval.action}
-            </code>
+            <textarea
+              className="w-full text-xs border border-gray-300 p-2 rounded mb-3"
+              rows={4}
+              value={editedAction}
+              onChange={(e) => setEditedAction(e.target.value)}
+            ></textarea>
             <div className="flex gap-2">
               <Button
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"

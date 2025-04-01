@@ -56,18 +56,20 @@ async def run_agent_loop(repo_name: str, user_input: str):
         action = extract_action(content)
         if action:
             task_id = str(uuid.uuid4())
+            yield f"\n[ApprovalRequired] {task_id} → {action}"
             approval_queue[task_id] = {"action": action, "approved": None}
             yield "\n⏸ Awaiting user approval..."
-            yield f"\n[ApprovalRequired] {task_id} → {action}"
 
             while approval_queue[task_id]["approved"] is None:
                 await asyncio.sleep(1)  # ✅ non-blocking wait
 
             if approval_queue[task_id]["approved"]:
-                result = execute_action(action, repo_name)
+                final_action = approval_queue[task_id]["action"]
+                result = execute_action(final_action, repo_name)
                 messages.append({"role": "user", "content": f"Result: {result}"})
-                yield f"\n✅ Executed: {action}"
+                yield f"\n✅ Executed: {final_action}"
                 yield f"\n📄 Result: {result}"
+
             else:
                 yield "\n❌ Action was rejected by the user. Stopping execution."
                 break

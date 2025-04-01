@@ -30,7 +30,12 @@ export default function AutomationFrameworkUI() {
     taskId: string;
     action: string;
   } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [editedAction, setEditedAction] = useState<string>("");
+
+  useEffect(() => {
+    setIsEditing(false);
+  }, [pendingApproval]);
 
   // Auto-scroll when executionStatus updates
   useEffect(() => {
@@ -125,7 +130,9 @@ export default function AutomationFrameworkUI() {
         const approval = parseApprovalTag(chunk);
         if (approval) {
           setPendingApproval(approval);
-          setEditedAction(approval.action);
+          if (!isEditing) {
+            setEditedAction(approval.action);
+          }
         }
       }
 
@@ -267,12 +274,19 @@ export default function AutomationFrameworkUI() {
             <p className="text-sm font-medium mb-2">
               🛑 Awaiting approval for:
             </p>
-            <textarea
-              className="w-full text-xs border border-gray-300 p-2 rounded mb-3"
-              rows={4}
-              value={editedAction}
-              onChange={(e) => setEditedAction(e.target.value)}
-            ></textarea>
+            {isEditing ? (
+              <textarea
+                className="w-full text-xs border border-gray-300 p-2 rounded mb-3"
+                rows={4}
+                value={editedAction}
+                onChange={(e) => setEditedAction(e.target.value)}
+              ></textarea>
+            ) : (
+              <code className="text-xs block mb-3 text-gray-700 whitespace-pre-wrap">
+                {editedAction}
+              </code>
+            )}
+
             <div className="flex gap-2">
               <Button
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
@@ -291,6 +305,14 @@ export default function AutomationFrameworkUI() {
                 }}
               >
                 ❌ Reject
+              </Button>
+              <Button
+                className={`${
+                  isEditing ? "bg-gray-500" : "bg-blue-500 hover:bg-blue-600"
+                } text-white px-4 py-2 rounded`}
+                onClick={() => setIsEditing((prev) => !prev)}
+              >
+                {isEditing ? "Cancel Edit" : "✏️ Edit"}
               </Button>
             </div>
           </div>

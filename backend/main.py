@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uuid
 from services.executor import cancel_execution
-from services.agent_executor import run_agent_loop, approval_queue
+from services.agent_executor import run_agent_loop, approval_channels
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -62,19 +62,22 @@ async def run_automation(request: UserRequest):
 @app.post("/approve-action")
 async def approve_action(request: ApprovalRequest):
     task_id = request.task_id
-    if task_id not in approval_queue:
+    if task_id not in approval_channels:
         raise HTTPException(status_code=404, detail="Task ID not found or already processed.")
 
-    if request.edited_command and request.approved:
-        approval_queue[task_id]["action"] = request.edited_command  # Save new command
+    # 🧠 Put approval response directly into the channel
+    await approval_channels[task_id].put({
+        "approved": request.approved,
+        "edited_command": request.edited_command,
+    })
 
-    approval_queue[task_id]["approved"] = request.approved
     return {
         "status": "acknowledged",
         "task_id": task_id,
         "approved": request.approved,
-        "used_command": approval_queue[task_id]["action"]
+        "used_command": request.edited_command,
     }
+
 
 @app.get("/get-llm-output/{task_id}")
 async def get_llm_output(task_id: str):

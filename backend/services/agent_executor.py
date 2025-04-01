@@ -6,7 +6,7 @@ import uuid
 import subprocess
 
 # Shared dictionary to manage pending approvals
-approval_queue = {}
+approval_channels = {}  # key: task_id, value: asyncio.Queue
 
 async def run_agent_loop(repo_name: str, user_input: str):
     """
@@ -56,20 +56,22 @@ async def run_agent_loop(repo_name: str, user_input: str):
         action = extract_action(content)
         if action:
             task_id = str(uuid.uuid4())
+            approval_q = asyncio.Queue()
+            approval_channels[task_id] = approval_q  # ✅ register the approval channel
+
             yield f"\n[ApprovalRequired] {task_id} → {action}"
-            approval_queue[task_id] = {"action": action, "approved": None}
             yield "\n⏸ Awaiting user approval..."
 
-            while approval_queue[task_id]["approved"] is None:
-                await asyncio.sleep(1)  # ✅ non-blocking wait
+            # ⏳ Wait here until /approve-action puts into the queue
+            approval_response = await approval_q.get()
+            approved = approval_response["approved"]
+            edited_command = approval_response.get("edited_command") or action
 
-            if approval_queue[task_id]["approved"]:
-                final_action = approval_queue[task_id]["action"]
-                result = execute_action(final_action, repo_name)
+            if approved:
+                result = execute_action(edited_command, repo_name)
                 messages.append({"role": "user", "content": f"Result: {result}"})
-                yield f"\n✅ Executed: {final_action}"
+                yield f"\n📝 Executed: {edited_command}"
                 yield f"\n📄 Result: {result}"
-
             else:
                 yield "\n❌ Action was rejected by the user. Stopping execution."
                 break

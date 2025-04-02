@@ -34,6 +34,7 @@ export default function AutomationFrameworkUI() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedAction, setEditedAction] = useState<string>("");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFadingOutApproval, setIsFadingOutApproval] = useState(false);
 
   useEffect(() => {
     setIsEditing(false);
@@ -118,6 +119,11 @@ export default function AutomationFrameworkUI() {
   const mutation = useMutation({
     mutationFn: async ({ cmd, repo }: { cmd: string; repo: string }) => {
       setExecutionStatus("");
+      setIsFadingOutApproval(true);
+      setTimeout(() => {
+        setPendingApproval(null);
+        setIsFadingOutApproval(false);
+      }, 300); // match this duration with your fade transition (300ms)
       setElapsedTime(0);
       setStartTime(Date.now());
       setIsRunning(true);
@@ -301,7 +307,11 @@ export default function AutomationFrameworkUI() {
         )}
 
         {pendingApproval && (
-          <div className="mt-4 p-4 border border-yellow-400 bg-yellow-100 rounded-md shadow-sm">
+          <div
+            className={`mt-4 p-4 border border-yellow-400 bg-yellow-100 rounded-md shadow-sm transition-opacity duration-300 ${
+              isFadingOutApproval ? "opacity-0" : "opacity-100"
+            }`}
+          >
             <p className="text-sm font-medium mb-2">
               🛑 Awaiting approval for:
             </p>

@@ -48,7 +48,7 @@ async def run_automation(request: UserRequest):
 
     async def log_stream():
         try:
-            async for log in run_agent_loop(repo_name, user_input):
+            async for log in run_agent_loop(task_id, repo_name, user_input):
                 yield log
             task_status[task_id] = "Completed"
             yield "\n✅ Task Completed!"
@@ -86,8 +86,13 @@ async def get_llm_output(task_id: str):
         raise HTTPException(status_code=404, detail="Task ID not found or no LLM output available.")
     return {"llm_output": llm_outputs[task_id]}
 
+from services.agent_executor import cancelled_tasks
+
 @app.post("/cancel-automation")
 async def cancel_automation():
-    """Cancels any active automation loop."""
-    cancel_execution()
+    # Add ALL running task_ids to cancelled_tasks (basic version)
+    for task_id in approval_channels:
+        cancelled_tasks.add(task_id)
+
+    cancel_execution()  # for subprocess compatibility
     return {"message": "Automation cancelled"}

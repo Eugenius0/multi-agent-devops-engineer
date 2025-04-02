@@ -7,8 +7,9 @@ import subprocess
 
 # Shared dictionary to manage pending approvals
 approval_channels = {}  # key: task_id, value: asyncio.Queue
+cancelled_tasks = set()  # Track task IDs that should be cancelled
 
-async def run_agent_loop(repo_name: str, user_input: str):
+async def run_agent_loop(task_id: str, repo_name: str, user_input: str):
     """
     Loop: LLM thinks, generates Action (command or code), waits for approval, then executes.
     """
@@ -47,6 +48,10 @@ async def run_agent_loop(repo_name: str, user_input: str):
 
         yield f"\n🧠 {content}"
 
+        if task_id in cancelled_tasks:
+            yield "\n❌ Execution cancelled by user."
+            break
+
         # Stop if task is marked as complete
         if "Final Answer" in content:
             yield "\n✅ All steps completed."
@@ -64,6 +69,10 @@ async def run_agent_loop(repo_name: str, user_input: str):
 
             # ⏳ Wait here until /approve-action puts into the queue
             approval_response = await approval_q.get()
+            if task_id in cancelled_tasks:
+                yield "\n❌ Execution cancelled before user approval."
+                break
+
             approved = approval_response["approved"]
             edited_command = approval_response.get("edited_command") or action
 

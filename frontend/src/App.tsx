@@ -95,6 +95,14 @@ export default function AutomationFrameworkUI() {
     }
   };
 
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isFullscreen && modalRef.current) {
+      modalRef.current.focus(); // Set focus when fullscreen opens
+    }
+  }, [isFullscreen]);
+
   const mutation = useMutation({
     mutationFn: async ({ cmd, repo }: { cmd: string; repo: string }) => {
       setExecutionStatus("");
@@ -330,68 +338,89 @@ export default function AutomationFrameworkUI() {
         )}
 
         {isFullscreen && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div className="bg-white w-11/12 h-5/6 p-6 rounded-lg shadow-lg overflow-y-auto relative">
-              <button
-                className="absolute top-4 right-4 bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700"
-                onClick={() => setIsFullscreen(false)}
-              >
-                Close
-              </button>
+          <div
+            ref={modalRef}
+            className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
+            onClick={() => setIsFullscreen(false)}
+          >
+            <div
+              ref={modalRef}
+              className="bg-white w-11/12 h-5/6 rounded-lg shadow-lg overflow-hidden relative flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+              tabIndex={0}
+              role="button"
+              onKeyDown={(e) => {
+                if (e.key === "Escape" || e.key === "Enter") {
+                  setIsFullscreen(false);
+                }
+              }}
+            >
+              {/* Sticky Header */}
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-300 p-4 flex justify-between items-center">
+                <h3 className="text-xl font-bold">
+                  📋 Fullscreen Execution Status
+                </h3>
+                <button
+                  className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700"
+                  onClick={() => setIsFullscreen(false)}
+                >
+                  Close
+                </button>
+              </div>
 
-              <h3 className="text-xl font-bold mb-4">
-                📋 Fullscreen Execution Status
-              </h3>
+              {/* Scrollable Body */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <pre className="text-sm text-gray-800 whitespace-pre-wrap mb-6">
+                  {executionStatus}
+                  <div ref={logsEndRef} />
+                </pre>
 
-              <pre className="text-sm text-gray-800 whitespace-pre-wrap mb-6">
-                {executionStatus}
-                <div ref={logsEndRef} />
-              </pre>
+                {/* Pending Approval */}
+                {pendingApproval && (
+                  <div className="mt-4 p-4 border border-yellow-400 bg-yellow-100 rounded-md shadow-sm">
+                    <p className="text-sm font-medium mb-2">
+                      🛑 Awaiting approval for:
+                    </p>
+                    {isEditing ? (
+                      <textarea
+                        className="w-full text-xs border border-gray-300 p-2 rounded mb-3"
+                        rows={4}
+                        value={editedAction}
+                        onChange={(e) => setEditedAction(e.target.value)}
+                      ></textarea>
+                    ) : (
+                      <code className="text-xs block mb-3 text-gray-700 whitespace-pre-wrap">
+                        {editedAction}
+                      </code>
+                    )}
 
-              {pendingApproval && (
-                <div className="mt-4 p-4 border border-yellow-400 bg-yellow-100 rounded-md shadow-sm">
-                  <p className="text-sm font-medium mb-2">
-                    🛑 Awaiting approval for:
-                  </p>
-                  {isEditing ? (
-                    <textarea
-                      className="w-full text-xs border border-gray-300 p-2 rounded mb-3"
-                      rows={4}
-                      value={editedAction}
-                      onChange={(e) => setEditedAction(e.target.value)}
-                    ></textarea>
-                  ) : (
-                    <code className="text-xs block mb-3 text-gray-700 whitespace-pre-wrap">
-                      {editedAction}
-                    </code>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Button
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-                      onClick={() => sendApproval(true)}
-                    >
-                      ✅ Approve
-                    </Button>
-                    <Button
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                      onClick={() => sendApproval(false)}
-                    >
-                      ❌ Reject
-                    </Button>
-                    <Button
-                      className={`${
-                        isEditing
-                          ? "bg-gray-500"
-                          : "bg-blue-500 hover:bg-blue-600"
-                      } text-white px-4 py-2 rounded`}
-                      onClick={() => setIsEditing((prev) => !prev)}
-                    >
-                      {isEditing ? "Cancel Edit" : "✏️ Edit"}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                        onClick={() => sendApproval(true)}
+                      >
+                        ✅ Approve
+                      </Button>
+                      <Button
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                        onClick={() => sendApproval(false)}
+                      >
+                        ❌ Reject
+                      </Button>
+                      <Button
+                        className={`${
+                          isEditing
+                            ? "bg-gray-500"
+                            : "bg-blue-500 hover:bg-blue-600"
+                        } text-white px-4 py-2 rounded`}
+                        onClick={() => setIsEditing((prev) => !prev)}
+                      >
+                        {isEditing ? "Cancel Edit" : "✏️ Edit"}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}

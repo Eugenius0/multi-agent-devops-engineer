@@ -358,6 +358,11 @@ export default function AutomationFrameworkUI() {
             <div
               className="bg-white w-11/12 h-5/6 rounded-lg shadow-lg overflow-hidden relative flex flex-col"
               onClick={(e) => e.stopPropagation()}
+              aria-hidden="true"
+              tabIndex={-1}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setIsFullscreen(false); // optional
+              }}
             >
               {/* Sticky Header */}
               <div className="sticky top-0 z-10 bg-white border-b border-gray-300 p-4 flex justify-between items-center">

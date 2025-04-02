@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "@headlessui/react";
 import { useMutation } from "@tanstack/react-query";
+import { Maximize } from "lucide-react";
 
 export default function AutomationFrameworkUI() {
   const [command, setCommand] = useState("");
@@ -32,6 +33,7 @@ export default function AutomationFrameworkUI() {
   } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedAction, setEditedAction] = useState<string>("");
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     setIsEditing(false);
@@ -214,13 +216,13 @@ export default function AutomationFrameworkUI() {
       <div className="w-full max-w-lg h-full bg-white shadow-lg rounded-lg p-6 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">Eugenius AI Devops Engineer</h2>
 
-        <Input
-          type="text"
-          className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-gray-500"
+        <textarea
+          className="w-full p-3 border border-gray-300 rounded-md focus:ring focus:ring-gray-500 text-sm resize-y min-h-[100px]"
           placeholder="Describe what you want (e.g., 'Create a GitHub Actions pipeline')"
           value={command}
           onChange={(e) => setCommand(e.target.value)}
         />
+
         <Input
           type="text"
           className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-gray-500 mt-2"
@@ -266,6 +268,15 @@ export default function AutomationFrameworkUI() {
               {executionStatus}
             </pre>
             <div ref={logsEndRef} />
+
+            <div className="mt-2 flex justify-end">
+              <button
+                className="text-blue-700 hover:text-blue-900"
+                onClick={() => setIsFullscreen(true)}
+              >
+                <Maximize className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -314,6 +325,73 @@ export default function AutomationFrameworkUI() {
               >
                 {isEditing ? "Cancel Edit" : "✏️ Edit"}
               </Button>
+            </div>
+          </div>
+        )}
+
+        {isFullscreen && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div className="bg-white w-11/12 h-5/6 p-6 rounded-lg shadow-lg overflow-y-auto relative">
+              <button
+                className="absolute top-4 right-4 bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700"
+                onClick={() => setIsFullscreen(false)}
+              >
+                Close
+              </button>
+
+              <h3 className="text-xl font-bold mb-4">
+                📋 Fullscreen Execution Status
+              </h3>
+
+              <pre className="text-sm text-gray-800 whitespace-pre-wrap mb-6">
+                {executionStatus}
+                <div ref={logsEndRef} />
+              </pre>
+
+              {pendingApproval && (
+                <div className="mt-4 p-4 border border-yellow-400 bg-yellow-100 rounded-md shadow-sm">
+                  <p className="text-sm font-medium mb-2">
+                    🛑 Awaiting approval for:
+                  </p>
+                  {isEditing ? (
+                    <textarea
+                      className="w-full text-xs border border-gray-300 p-2 rounded mb-3"
+                      rows={4}
+                      value={editedAction}
+                      onChange={(e) => setEditedAction(e.target.value)}
+                    ></textarea>
+                  ) : (
+                    <code className="text-xs block mb-3 text-gray-700 whitespace-pre-wrap">
+                      {editedAction}
+                    </code>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                      onClick={() => sendApproval(true)}
+                    >
+                      ✅ Approve
+                    </Button>
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                      onClick={() => sendApproval(false)}
+                    >
+                      ❌ Reject
+                    </Button>
+                    <Button
+                      className={`${
+                        isEditing
+                          ? "bg-gray-500"
+                          : "bg-blue-500 hover:bg-blue-600"
+                      } text-white px-4 py-2 rounded`}
+                      onClick={() => setIsEditing((prev) => !prev)}
+                    >
+                      {isEditing ? "Cancel Edit" : "✏️ Edit"}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

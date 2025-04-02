@@ -353,15 +353,11 @@ export default function AutomationFrameworkUI() {
           <div
             className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
             onClick={() => setIsFullscreen(false)}
-            role="presentation"
+            aria-hidden="true"
           >
             <div
-              ref={modalRef}
               className="bg-white w-11/12 h-5/6 rounded-lg shadow-lg overflow-hidden relative flex flex-col"
               onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              tabIndex={-1}
             >
               {/* Sticky Header */}
               <div className="sticky top-0 z-10 bg-white border-b border-gray-300 p-4 flex justify-between items-center">

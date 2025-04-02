@@ -103,6 +103,18 @@ export default function AutomationFrameworkUI() {
     }
   }, [isFullscreen]);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsFullscreen(false);
+    };
+    if (isFullscreen) {
+      window.addEventListener("keydown", handleEscape);
+    }
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isFullscreen]);
+
   const mutation = useMutation({
     mutationFn: async ({ cmd, repo }: { cmd: string; repo: string }) => {
       setExecutionStatus("");
@@ -339,21 +351,17 @@ export default function AutomationFrameworkUI() {
 
         {isFullscreen && (
           <div
-            ref={modalRef}
             className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
             onClick={() => setIsFullscreen(false)}
+            role="presentation"
           >
             <div
               ref={modalRef}
               className="bg-white w-11/12 h-5/6 rounded-lg shadow-lg overflow-hidden relative flex flex-col"
               onClick={(e) => e.stopPropagation()}
-              tabIndex={0}
-              role="button"
-              onKeyDown={(e) => {
-                if (e.key === "Escape" || e.key === "Enter") {
-                  setIsFullscreen(false);
-                }
-              }}
+              role="dialog"
+              aria-modal="true"
+              tabIndex={-1}
             >
               {/* Sticky Header */}
               <div className="sticky top-0 z-10 bg-white border-b border-gray-300 p-4 flex justify-between items-center">

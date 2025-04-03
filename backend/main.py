@@ -3,7 +3,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uuid
-from services.agent_executor import cancel_execution, cancelled_tasks
+from services.agent_executor import cancel_execution
 from services.agent_executor import run_agent_loop, approval_channels
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -83,8 +83,6 @@ async def get_llm_output(task_id: str):
     if task_id not in llm_outputs:
         raise HTTPException(status_code=404, detail="Task ID not found or no LLM output available.")
     return {"llm_output": llm_outputs[task_id]}
-
-from services.agent_executor import cancelled_tasks
 
 @app.post("/cancel-automation")
 async def cancel_automation():

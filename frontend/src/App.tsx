@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "@headlessui/react";
 import { useMutation } from "@tanstack/react-query";
 import { Maximize } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function AutomationFrameworkUI() {
   const [command, setCommand] = useState("");
@@ -193,6 +194,7 @@ export default function AutomationFrameworkUI() {
     if (isCancelling) return;
 
     setIsCancelling(true);
+    setPendingApproval(null);
 
     try {
       if (controllerRef.current) {
@@ -287,77 +289,91 @@ export default function AutomationFrameworkUI() {
 
         {executionTimerDisplay}
 
-        {executionStatus && (
-          <div className="mt-6 p-3 bg-blue-100 border border-blue-300 rounded-lg shadow-sm max-h-60 overflow-y-auto">
-            <h3 className="text-lg font-semibold">Execution Status</h3>
-            <pre className="text-xs text-gray-700 whitespace-pre-wrap">
-              {executionStatus}
-            </pre>
-            <div ref={logsEndRef} />
+        <AnimatePresence>
+          {executionStatus && (
+            <motion.div
+              key="executionStatus"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4 }}
+              className="mt-6 p-3 bg-blue-100 border border-blue-300 rounded-lg shadow-sm max-h-60 overflow-y-auto"
+            >
+              <h3 className="text-lg font-semibold">Execution Status</h3>
+              <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                {executionStatus}
+              </pre>
+              <div ref={logsEndRef} />
+              <div className="mt-2 flex justify-end">
+                <button
+                  className="text-blue-700 hover:text-blue-900"
+                  onClick={() => setIsFullscreen(true)}
+                >
+                  <Maximize className="w-5 h-5" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            <div className="mt-2 flex justify-end">
-              <button
-                className="text-blue-700 hover:text-blue-900"
-                onClick={() => setIsFullscreen(true)}
-              >
-                <Maximize className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {pendingApproval && !isFadingOutApproval && (
+            <motion.div
+              key="approval-box"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="mt-4 p-4 border border-yellow-400 bg-yellow-100 rounded-md shadow-sm"
+            >
+              <p className="text-sm font-medium mb-2">
+                🛑 Awaiting approval for:
+              </p>
 
-        {pendingApproval && (
-          <div
-            className={`mt-4 p-4 border border-yellow-400 bg-yellow-100 rounded-md shadow-sm transition-opacity duration-300 ${
-              isFadingOutApproval ? "opacity-0" : "opacity-100"
-            }`}
-          >
-            <p className="text-sm font-medium mb-2">
-              🛑 Awaiting approval for:
-            </p>
-            {isEditing ? (
-              <textarea
-                className="w-full text-xs border border-gray-300 p-2 rounded mb-3"
-                rows={4}
-                value={editedAction}
-                onChange={(e) => setEditedAction(e.target.value)}
-              ></textarea>
-            ) : (
-              <code className="text-xs block mb-3 text-gray-700 whitespace-pre-wrap">
-                {editedAction}
-              </code>
-            )}
+              {isEditing ? (
+                <textarea
+                  className="w-full text-xs border border-gray-300 p-2 rounded mb-3"
+                  rows={4}
+                  value={editedAction}
+                  onChange={(e) => setEditedAction(e.target.value)}
+                ></textarea>
+              ) : (
+                <code className="text-xs block mb-3 text-gray-700 whitespace-pre-wrap">
+                  {editedAction}
+                </code>
+              )}
 
-            <div className="flex gap-2">
-              <Button
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-                onClick={() => {
-                  console.log("✅ Approve clicked");
-                  sendApproval(true);
-                }}
-              >
-                ✅ Approve
-              </Button>
-              <Button
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                onClick={() => {
-                  console.log("❌ Reject clicked");
-                  sendApproval(false);
-                }}
-              >
-                ❌ Reject
-              </Button>
-              <Button
-                className={`${
-                  isEditing ? "bg-gray-500" : "bg-blue-500 hover:bg-blue-600"
-                } text-white px-4 py-2 rounded`}
-                onClick={() => setIsEditing((prev) => !prev)}
-              >
-                {isEditing ? "Cancel Edit" : "✏️ Edit"}
-              </Button>
-            </div>
-          </div>
-        )}
+              <div className="flex gap-2">
+                <Button
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                  onClick={() => {
+                    console.log("✅ Approve clicked");
+                    sendApproval(true);
+                  }}
+                >
+                  ✅ Approve
+                </Button>
+                <Button
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                  onClick={() => {
+                    console.log("❌ Reject clicked");
+                    sendApproval(false);
+                  }}
+                >
+                  ❌ Reject
+                </Button>
+                <Button
+                  className={`${
+                    isEditing ? "bg-gray-500" : "bg-blue-500 hover:bg-blue-600"
+                  } text-white px-4 py-2 rounded`}
+                  onClick={() => setIsEditing((prev) => !prev)}
+                >
+                  {isEditing ? "Cancel Edit" : "✏️ Edit"}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {isFullscreen && (
           <div
@@ -450,18 +466,37 @@ export default function AutomationFrameworkUI() {
             <p className="text-gray-500">No executions yet.</p>
           ) : (
             <div className="space-y-2">
-              {logs.map((log) => (
-                <div
-                  key={log.taskId}
-                  className="p-3 bg-gray-100 border border-gray-300 rounded-lg shadow-sm"
-                >
-                  <p className="text-sm text-gray-600">{log.timestamp}</p>
-                  <p className="font-semibold">{log.status}</p>
-                  <p className="text-xs text-gray-500">
-                    ⏳ {log.executionTime}
-                  </p>
-                </div>
-              ))}
+              <motion.div
+                className="space-y-2"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: {
+                    transition: {
+                      staggerChildren: 0.08,
+                    },
+                  },
+                }}
+              >
+                <AnimatePresence>
+                  {logs.map((log) => (
+                    <motion.div
+                      key={log.taskId}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.3 }}
+                      className="p-3 bg-gray-100 border border-gray-300 rounded-lg shadow-sm"
+                    >
+                      <p className="text-sm text-gray-600">{log.timestamp}</p>
+                      <p className="font-semibold">{log.status}</p>
+                      <p className="text-xs text-gray-500">
+                        ⏳ {log.executionTime}
+                      </p>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
             </div>
           )}
         </div>

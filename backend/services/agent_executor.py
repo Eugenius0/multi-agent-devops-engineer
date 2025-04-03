@@ -84,8 +84,9 @@ async def run_agent_loop(task_id: str, repo_name: str, user_input: str):
                 yield f"\n📝 Executed: {edited_command}"
                 yield f"\n📄 Result: {result}"
             else:
-                yield "\n❌ Action was rejected by the user. Stopping execution."
-                break
+                # ❗ New logic: inform the LLM about the rejection and continue the loop
+                messages.append({"role": "user", "content": "The proposed action was rejected by the user. Please try a different approach."})
+                yield "\n⚠️ Action was rejected. Asking the AI for an alternative..."
 
 
 def run_command(command, capture_output=True, cwd=None):

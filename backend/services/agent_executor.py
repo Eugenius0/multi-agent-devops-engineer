@@ -9,6 +9,8 @@ import subprocess
 approval_channels = {}  # key: task_id, value: asyncio.Queue
 cancelled_tasks = set()  # Track task IDs that should be cancelled
 
+MODEL_NAME = "deepseek-coder-v2"
+
 async def run_agent_loop(task_id: str, repo_name: str, user_input: str):
     """
     Loop: LLM thinks, generates Action (command or code), waits for approval, then executes.
@@ -42,7 +44,7 @@ async def run_agent_loop(task_id: str, repo_name: str, user_input: str):
 
     while True:
         # Call the model for next reasoning step
-        response = ollama.chat(model="deepseek-coder-v2", messages=messages)
+        response = ollama.chat(model=MODEL_NAME, messages=messages)
         content = response["message"]["content"]
         messages.append({"role": "assistant", "content": content})
 
@@ -130,3 +132,13 @@ def execute_action(command: str, repo_name: str) -> str:
         return out or f"✅ Successfully executed: {command}"
     else:
         return f"❌ Command failed with error:\n{err}"
+    
+
+
+running_process = None  # Legacy compatibility (can stay None)
+stop_execution = False  # Optional global flag for cancellation
+
+def cancel_execution():
+    """Legacy cancellation hook for compatibility."""
+    cancelled_tasks.update(approval_channels.keys())
+

@@ -3,7 +3,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uuid
-from services.executor import cancel_execution
+from services.agent_executor import cancel_execution, cancelled_tasks
 from services.agent_executor import run_agent_loop, approval_channels
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -18,8 +18,6 @@ app.add_middleware(
     allow_methods=["*"], # Allow all HTTP methods (POST, GET, etc.)
     allow_headers=["*"], # Allow all headers
 )
-
-MODEL_NAME = "deepseek-coder-v2"  # Model for reasoning
 
 # Store task statuses and LLM output history
 task_status = {}
@@ -90,9 +88,6 @@ from services.agent_executor import cancelled_tasks
 
 @app.post("/cancel-automation")
 async def cancel_automation():
-    # Add ALL running task_ids to cancelled_tasks (basic version)
-    for task_id in approval_channels:
-        cancelled_tasks.add(task_id)
-
-    cancel_execution()  # for subprocess compatibility
+    cancel_execution()
     return {"message": "Automation cancelled"}
+

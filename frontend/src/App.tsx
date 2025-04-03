@@ -344,32 +344,48 @@ export default function AutomationFrameworkUI() {
               )}
 
               <div className="flex gap-2">
-                <Button
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-                  onClick={() => {
-                    console.log("✅ Approve clicked");
-                    sendApproval(true);
-                  }}
-                >
-                  ✅ Approve
-                </Button>
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                  onClick={() => {
-                    console.log("❌ Reject clicked");
-                    sendApproval(false);
-                  }}
-                >
-                  ❌ Reject
-                </Button>
-                <Button
-                  className={`${
-                    isEditing ? "bg-gray-500" : "bg-blue-500 hover:bg-blue-600"
-                  } text-white px-4 py-2 rounded`}
-                  onClick={() => setIsEditing((prev) => !prev)}
-                >
-                  {isEditing ? "Cancel Edit" : "✏️ Edit"}
-                </Button>
+                {isEditing ? (
+                  <>
+                    <Button
+                      className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded"
+                      onClick={() => setIsEditing(false)}
+                    >
+                      💾 Save Edit
+                    </Button>
+                    <Button
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+                      onClick={() => {
+                        if (pendingApproval) {
+                          setEditedAction(pendingApproval.action); // reset to original
+                        }
+                        setIsEditing(false);
+                      }}
+                    >
+                      ↩️ Cancel Edit
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                      onClick={() => sendApproval(true)}
+                    >
+                      ✅ Approve
+                    </Button>
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                      onClick={() => sendApproval(false)}
+                    >
+                      ❌ Reject
+                    </Button>
+                    <Button
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      ✏️ Edit
+                    </Button>
+                  </>
+                )}
               </div>
             </motion.div>
           )}

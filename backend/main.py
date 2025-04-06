@@ -1,10 +1,9 @@
-# main.py
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uuid
-from services.agent_executor import cancel_execution
-from services.agent_executor import run_agent_loop, approval_channels
+from backend.services.agent_orchestrator import AgentOrchestrator
+from backend.services.agent_executor import cancel_execution
+from backend.services.state import approval_channels
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -23,6 +22,9 @@ app.add_middleware(
 task_status = {}
 llm_outputs = {}
 
+# Instantiate orchestrator
+orchestrator = AgentOrchestrator()
+
 class UserRequest(BaseModel):
     user_input: str
     repo_name: str
@@ -34,7 +36,6 @@ class ApprovalRequest(BaseModel):
 
 @app.post("/run-automation")
 async def run_automation(request: UserRequest):
-    """Handles the full AI automation agent pipeline with streaming."""
     user_input = request.user_input.strip()
     repo_name = request.repo_name.strip()
 
@@ -46,14 +47,13 @@ async def run_automation(request: UserRequest):
 
     async def log_stream():
         try:
-            async for log in run_agent_loop(task_id, repo_name, user_input):
+            async for log in orchestrator.run(task_id, repo_name, user_input):
                 yield log
             task_status[task_id] = "Completed"
             yield "\n✅ Task Completed!"
         except Exception as e:
             task_status[task_id] = "Failed"
             yield f"\n❌ Error: {str(e)}"
-
 
     return StreamingResponse(log_stream(), media_type="text/event-stream")
 
@@ -88,4 +88,5 @@ async def get_llm_output(task_id: str):
 async def cancel_automation():
     cancel_execution()
     return {"message": "Automation cancelled"}
+
 

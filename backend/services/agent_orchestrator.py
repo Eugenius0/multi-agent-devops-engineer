@@ -22,7 +22,7 @@ class AgentOrchestrator:
         yield f"\n🧠 Refined Task: {refined_input}"
 
         while True:
-            thought_output = await self.reasoning_agent.think(refined_input, history)
+            thought_output = await self.reasoning_agent.think(refined_input, repo_name, history)
             history.append({"role": "assistant", "content": thought_output})
             yield f"\n🧠 {thought_output}"
 

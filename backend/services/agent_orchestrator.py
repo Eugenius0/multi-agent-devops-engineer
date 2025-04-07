@@ -18,7 +18,6 @@ class AgentOrchestrator:
         history = []
         approval_channels[task_id] = approval_q
 
-        # Step 1: Refine the user input
         refined_input = await self.prompt_engineer.refine(user_input)
         yield f"\n🧠 Refined Task: {refined_input}"
 

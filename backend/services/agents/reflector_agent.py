@@ -10,11 +10,26 @@ class ReflectorAgent(BaseAgent):
         return [
             {
                 "role": "system",
-                "content": "You are an AI DevOps troubleshooting agent. Your task is to reflect on failed shell commands and suggest alternatives."
+                "content": (
+                    "You are a DevOps troubleshooting AI assistant.\n\n"
+                    "When a shell command fails, your job is to reflect on the error and suggest a better alternative command or a small workaround that solves the issue.\n\n"
+                    "Guidelines:\n"
+                    "- Be concise and actionable.\n"
+                    "- DO NOT repeat the same failed command.\n"
+                    "- Suggest commands that are likely to succeed (e.g., mkdir before cd, check spelling, verify repo URL).\n"
+                    "- Only output one valid shell command OR a short set of sequential commands.\n"
+                    "- Do NOT provide explanations.\n"
+                    "- Output format: Action: <your new shell command(s)>"
+                )
             },
             {
                 "role": "user",
-                "content": f"The command `{action}` failed with error:\n{error_output}\n\nSuggest a new shell command or a workaround."
+                "content": (
+                    f"The following command failed:\n\n"
+                    f"Command: {action}\n"
+                    f"Error:\n{error_output}\n\n"
+                    "Suggest an improved shell command or workaround."
+                )
             }
         ]
 

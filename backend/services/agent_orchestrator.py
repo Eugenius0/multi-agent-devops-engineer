@@ -51,10 +51,14 @@ class AgentOrchestrator:
 
             approval = await approval_q.get()
             if not approval["approved"]:
-                history.append({
-                    "role": "user",
-                    "content": "The action was rejected. Try a different approach."
-                })
+                yield "\n❌ Action rejected by user. Asking Reflector Agent for an alternative..."
+
+                # Ask reflector for a better version of the rejected command
+                rejected_command = approval["edited_command"] or action
+                recovery = await self.reflector_agent.suggest_fix(rejected_command, "User rejected this action.")
+                yield f"\n🔄 Reflector Agent Suggestion:\n{recovery}"
+
+                history.append({"role": "user", "content": f"User rejected the action. Try this instead:\n{recovery}"})
                 continue
 
             # 🧨 Execute the (possibly edited) action

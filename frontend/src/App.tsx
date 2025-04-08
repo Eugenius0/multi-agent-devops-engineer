@@ -242,7 +242,9 @@ export default function AutomationFrameworkUI() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-300 p-6">
       <div className="w-full max-w-lg h-full bg-white shadow-lg rounded-lg p-6 overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4">Eugenius AI Devops Engineer</h2>
+        <h2 className="text-2xl font-bold mb-4">
+          Eugenius Multi Agent Devops Engineer
+        </h2>
 
         <textarea
           className="w-full p-3 border border-gray-300 rounded-md focus:ring focus:ring-gray-500 text-sm resize-y min-h-[100px]"

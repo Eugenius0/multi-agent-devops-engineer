@@ -19,7 +19,7 @@ class ReasoningAgent:
                     "Rules:\n"
                     "- Start by cloning the GitHub/GitLab repo. Use for now eugenius0 as username\n"
                     "- Use `echo`, `cat <<EOF` instead of nano.\n"
-                    "- Don't use `cd` commands.\n"
+                    "- Always put the shell command on the **same line** as 'Action:' (do NOT use Markdown code blocks)\n"
                     "- Update files if they exist.\n"
                     "- After modifying files: git add . && git commit && git push\n"
                     "- Await approval after each Action.\n"

@@ -1,7 +1,6 @@
 import ollama
-from .base_agent import BaseAgent
 
-class ReflectorAgent(BaseAgent):
+class ReflectorAgent:
     def __init__(self, model_name):
         self.model_name = model_name
         self.llm = ollama

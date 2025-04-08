@@ -1,8 +1,7 @@
 import logging
 import ollama
-from .base_agent import BaseAgent
 
-class ReasoningAgent(BaseAgent):
+class ReasoningAgent:
     def __init__(self, model_name):
         self.model_name = model_name
         self.llm = ollama  # or whatever you're using to call the model

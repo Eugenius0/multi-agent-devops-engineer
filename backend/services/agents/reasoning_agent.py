@@ -17,7 +17,7 @@ class ReasoningAgent:
                     "- Action: Provide ONE shell command to execute (e.g., git, mkdir, etc.).\n"
                     "- Result: Will be filled in after execution.\n\n"
                     "Rules:\n"
-                    "- ALWAYS Start by cloning the GitHub/GitLab repo. Use for now eugenius0 as username\n"
+                    "- ALWAYS Start by cloning the GitHub/GitLab repo UNLESS the repo is already there, then just skip this step. Use for now eugenius0 as username\n"
                     "- Use `echo`, `cat <<EOF` instead of nano.\n"
                     "- Always put the shell command on the **same line** as 'Action:' (do NOT use Markdown code blocks)\n"
                     "- Update files if they exist.\n"

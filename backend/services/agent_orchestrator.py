@@ -23,27 +23,23 @@ class AgentOrchestrator:
         yield f"\n🧠 Refined Task: {refined_input}"
 
         while True:
-            # 🔍 Get LLM output
-            thought_output = await self.reasoning_agent.think(refined_input, repo_name, history)
+            full_response = await self.reasoning_agent.think(refined_input, repo_name, history)
+            history.append({"role": "assistant", "content": full_response})
+            yield f"\n🧠 {full_response}"
 
-            # ✅ Extract action before appending to history
-            action = extract_action(thought_output)
-
-            # Log full assistant message
-            yield f"\n🧠 {thought_output}"
-            history.append({"role": "assistant", "content": thought_output})
-
-            # ✅ Check if task is complete
-            if "Final Answer" in thought_output:
+            if "Final Answer" in full_response:
                 yield "\n✅ Task complete."
                 break
 
-            # ❌ Handle missing action
-            if not action:
-                yield "\n⚠️ No action found. Aborting."
-                break
+            await self._process_response_blocks(full_response, repo_name, history, approval_q)
 
-            # 🔁 Approval step
+    async def _process_response_blocks(self, full_response, repo_name, history, approval_q):
+        blocks = re.split(r"\n(?=Thought:)", full_response)
+        for block in blocks:
+            action = extract_action(block)
+            if not action:
+                continue
+
             step_id = str(uuid.uuid4())
             approval_channels[step_id] = approval_q
             yield f"\n[ApprovalRequired] {step_id} → {action}"
@@ -51,27 +47,36 @@ class AgentOrchestrator:
 
             approval = await approval_q.get()
             if not approval["approved"]:
-                yield "\n❌ Action rejected by user. Asking Reflector Agent for an alternative..."
+                await self._handle_rejection(action, approval, history)
+                break
 
-                # Ask reflector for a better version of the rejected command
-                rejected_command = approval["edited_command"] or action
-                recovery = await self.reflector_agent.suggest_fix(rejected_command, "User rejected this action.")
-                yield f"\n🔄 Reflector Agent Suggestion:\n{recovery}"
+            await self._execute_and_handle_action(action, approval, repo_name, history)
 
-                history.append({"role": "user", "content": f"User rejected the action. Try this instead:\n{recovery}"})
-                continue
+    async def _handle_rejection(self, action, approval, history):
+        yield "\n❌ Action rejected by user. Asking Reflector Agent for an alternative..."
+        rejected_command = approval["edited_command"] or action
+        recovery = await self.reflector_agent.suggest_fix(rejected_command, "User rejected this action.")
+        yield f"\n🔄 Reflector Agent Suggestion:\n{recovery}"
+        history.append({
+            "role": "user",
+            "content": f"User rejected the action. Try this instead:\n{recovery}"
+        })
 
-            # 🧨 Execute the (possibly edited) action
-            used_command = approval["edited_command"] or action
-            result = execute_action(used_command, repo_name)
-            yield f"\n📄 Result: {result}"
-            history.append({"role": "user", "content": f"Result: {result}"})
+    async def _execute_and_handle_action(self, action, approval, repo_name, history):
+        used_command = approval["edited_command"] or action
+        result = execute_action(used_command, repo_name)
+        yield f"\n📄 Result: {result}"
+        history.append({"role": "user", "content": f"Result: {result}"})
 
-            # 🛠 If failed, ask ReflectorAgent to suggest a fix
-            if result.startswith("❌"):
-                recovery = await self.reflector_agent.suggest_fix(action, result)
-                yield f"\n🔄 Reflector Agent Suggestion:\n{recovery}"
-                history.append({"role": "user", "content": f"Error occurred. Try this instead:\n{recovery}"})
+        if result.startswith("❌"):
+            recovery = await self.reflector_agent.suggest_fix(used_command, result)
+            yield f"\n🔄 Reflector Agent Suggestion:\n{recovery}"
+            history.append({
+                "role": "user",
+                "content": f"Error occurred. Try this instead:\n{recovery}"
+            })
+
+
 
 
 # --- Helper functions ---

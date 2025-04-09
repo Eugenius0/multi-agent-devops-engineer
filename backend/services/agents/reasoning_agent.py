@@ -18,17 +18,15 @@ class ReasoningAgent:
                     "- Result: Will be filled in after execution.\n\n"
                     "Rules:\n"
                     "- ALWAYS start by checking if the GitHub repo is cloned locally at ./repos/{repo_name}. If not, clone it using: git clone https://github.com/eugenius0/{repo_name}.git\n"
-                    "- NEVER skip this check or try to mkdir manually.\n"
                     "- Assume you are working inside the repo directory after cloning.\n"
-                    "- Use `echo`, `cat <<EOF` instead of nano.\n"
-                    "- Always put the shell command on the **same line** as 'Action:' (no Markdown code blocks)\n"
-                    "- ALWAYS use this exact placeholder text after Action: `Result: Will be filled in after execution.`\n"
-                    "- DO NOT guess or simulate the result.\n"
-                    "- After modifying files: git add . && git commit -m 'message' && git push\n"
-                    "- Await user approval after every Action.\n"
-                    "- Use 'Final Answer: ...' only when the task is truly done."
-
-            )
+                    "- Use `echo`, `cat <<EOF` or `touch` instead of interactive editors like nano.\n"
+                    "- Always put the shell command on the **same line** as 'Action:' (do NOT use Markdown code blocks).\n"
+                    "- Never generate a Result: line until the command has actually been executed. Use: Result: Will be filled in after execution. as a placeholder."
+                    "- If you create or modify files (e.g., GitHub Actions workflows, Dockerfiles, README, etc.), you MUST commit and push the changes. Use:\n"
+                    "  git add . && git commit -m '<your commit message>' && git push\n"
+                    "- Await approval after each Action.\n"
+                    "- End with 'Final Answer: ...' only after committing and pushing changes."
+)
             },
             {"role": "user", "content": f"The task is: {task_description} for repository {repo_name}."},
         ] + history

@@ -19,12 +19,15 @@ class ReasoningAgent:
                     "Rules:\n"
                     "- ALWAYS start by checking if the GitHub repo is cloned locally at ./repos/{repo_name}. If not, clone it using: git clone https://github.com/eugenius0/{repo_name}.git\n"
                     "- Assume you are working inside the repo directory after cloning.\n"
+                    "- Await approval after each Action.\n"
+                    "- Use shell commands that are likely to succeed.\n"
                     "- Use `echo`, `cat <<EOF` or `touch` instead of interactive editors like nano.\n"
                     "- Always put the shell command on the **same line** as 'Action:' (do NOT use Markdown code blocks).\n"
-                    "- Never generate a Result: line until the command has actually been executed. Use: Result: Will be filled in after execution. as a placeholder."
+                    "- Never generate a Result line until the command has actually been executed. Use: Result: Will be filled in after execution. as a placeholder."
+                    "- Whatever gets pushed such as a pipeline should work out-of-the-box without requiring manual edits"
                     "- If you create or modify files (e.g., GitHub Actions workflows, Dockerfiles, README, etc.), you MUST commit and push the changes. Use:\n"
-                    "  git add . && git commit -m '<your commit message>' && git push\n"
-                    "- Await approval after each Action.\n"
+                    "  git add . && git commit -m '<your commit message>' && git push\n ALWAYS use those when something is created or modified.\n"
+                    "- If you need to run a command that requires sudo, use: sudo -S <command> <<< 'your_password'\n"
                     "- End with 'Final Answer: ...' only after committing and pushing changes."
 )
             },

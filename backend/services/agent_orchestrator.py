@@ -67,7 +67,7 @@ class AgentOrchestrator:
 
                 # Ask reflector for a better version of the rejected command
                 rejected_command = approval["edited_command"] or action
-                recovery = await self.reflector_agent.suggest_fix(rejected_command, "User rejected this action.")
+                recovery = await self.reflector_agent.suggest_fix(rejected_command, "User rejected this action.", repo_name)
                 yield f"\n🔄 Reflector Agent Suggestion:\n{recovery}"
 
                 history.append({"role": "user", "content": f"User rejected the action. Try this instead:\n{recovery}"})
@@ -81,7 +81,7 @@ class AgentOrchestrator:
 
             # 🛠 If failed, ask ReflectorAgent to suggest a fix
             if result.startswith("❌"):
-                recovery = await self.reflector_agent.suggest_fix(action, result)
+                recovery = await self.reflector_agent.suggest_fix(action, result, repo_name)
                 yield f"\n🔄 Reflector Agent Suggestion:\n{recovery}"
                 history.append({"role": "user", "content": f"Error occurred. Try this instead:\n{recovery}"})
 

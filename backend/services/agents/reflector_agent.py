@@ -5,7 +5,7 @@ class ReflectorAgent:
         self.model_name = model_name
         self.llm = ollama
         
-    def build_prompt(self, action, error_output):
+    def build_prompt(self, action, repo_name, error_output):
         return [
             {
                 "role": "system",
@@ -32,12 +32,15 @@ class ReflectorAgent:
                     f"The following command failed:\n\n"
                     f"Command: {action}\n"
                     f"Error:\n{error_output}\n\n"
+                    f"Repository: {repo_name}\n\n"
+                    "Your task is to suggest a better command that resolves the issue.\n"
+                    "If you can't fix it, provide a workaround.\n\n"
                     "Suggest an improved shell command or workaround."
                 )
             }
         ]
 
-    async def suggest_fix(self, action, error_output):
-        messages = self.build_prompt(action, error_output)
+    async def suggest_fix(self, action, repo_name, error_output):
+        messages = self.build_prompt(action, repo_name, error_output)
         response = self.llm.chat(model=self.model_name, messages=messages)
         return response["message"]["content"]

@@ -13,6 +13,8 @@ class PromptEngineerAgent:
                     "You are a DevOps prompt engineer.\n\n"
                     "Your job is to take a vague or natural language user input and rewrite it as a precise, technical DevOps automation instruction.\n"
                     "Your output will be used directly by another agent to generate shell commands.\n\n"
+                    "If the task requires multiple steps, clearly describe them in order, including tooling used (e.g., Docker, GitHub Actions, Kubernetes, AWS CLI)."
+                    "Use imperative style and include what the final output or goal should be."
                     "Guidelines:\n"
                     "- Be specific and unambiguous.\n"
                     "- Remove filler words or conversational phrases.\n"

@@ -22,11 +22,18 @@ class AgentOrchestrator:
         refined_input = await self.prompt_engineer.refine(user_input)
         yield f"\n🧠 Refined Task: {refined_input}"
 
-        if not os.path.exists(f"./repos/{repo_name}"):
+        repo_path = f"./repos/{repo_name}"
+        if os.path.exists(repo_path):
             history.append({
                 "role": "user",
-                "content": f"Note: The repository {repo_name} is NOT present locally. You must clone it first using: git clone https://github.com/eugenius0/{repo_name}.git"
+                "content": f"The repository {repo_name} is already cloned locally into {repo_path}. You are already in the correct directory. DO NOT clone again or use 'cd'."
             })
+        else:
+            history.append({
+                "role": "user",
+                "content": f"The repository {repo_name} is NOT cloned yet. Start by cloning it using: git clone https://github.com/eugenius0/{repo_name}.git"
+            })
+
 
 
         while True:

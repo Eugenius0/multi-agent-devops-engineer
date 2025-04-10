@@ -45,8 +45,16 @@ class AgentOrchestrator:
 
             # Ensure the Result line is a placeholder before execution
             if "Result:" in thought_output and "Will be filled in after execution" not in thought_output:
-                yield "\n❌ Error: The agent hallucinated a Result. Blocking and rejecting this step."
-                break
+                yield "\n❌ Error: The agent hallucinated a Result. Retrying with corrected instruction..."
+
+                history.append({
+                    "role": "user",
+                    "content": (
+                        "⚠️ You included a real Result before the Action was approved or executed. "
+                        "Please only use: Result: Will be filled in after execution.\n"
+                        "Try again with the same Thought and Action, but follow the structure strictly."
+                    )
+                })
 
             yield f"\n🧠 {thought_output}"
             history.append({"role": "assistant", "content": thought_output})

@@ -45,7 +45,7 @@ class AgentOrchestrator:
 
             # Ensure the Result line is a placeholder before execution
             if "Result:" in thought_output and "Will be filled in after execution" not in thought_output:
-                yield "\n❌ Error: The agent hallucinated a Result. Retrying with corrected instruction..."
+                yield "\n⚠️ Warning: The agent hallucinated a Result. Retrying with corrected instruction..."
 
                 history.append({
                     "role": "user",

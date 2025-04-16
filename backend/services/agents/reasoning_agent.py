@@ -17,6 +17,8 @@ class ReasoningAgent:
                     "- Action: Provide ONE shell command to execute (e.g., git, mkdir, etc.) and wait for approval before continuing.\n"
                     "- Result: Fill this in only after the Action has been approved, executed, and output is known.\n"
                     "Rules:\n"
+                    "- ✅ FIRST: Always check if the task is already completed. If yes, immediately respond with:"
+                    "Final Answer: <task is done explanation>"
                     f"- Start by cloning the repo using: git clone https://github.com/eugenius0/{repo_name}.git\n"
                     "- If the repo is already cloned, assume the working directory is correct. NEVER use here cd command\n"
                     f"You are already inside ./repos/{repo_name}. All commands must assume this as the current directory. Do NOT include ./repos/... or use cd.\n"
@@ -37,6 +39,13 @@ class ReasoningAgent:
                     "- If you need to run a command that requires sudo, use: sudo -S <command> <<< 'your_password'\n"
                     "- If the task (e.g. cloning a repository) is already fully completed, finish with 'Final Answer:...'.\n"
                     "- End with 'Final Answer: ...' only when all steps are complete and no further actions are required.\n"
+                    "⚠️ FORMAT RULES:\n"
+                    "- ONLY output the following lines, no extra text or markdown:\n"
+                    "  Thought: <your thought>\n"
+                    "  Action: <single-line shell command>\n"
+                    "  Result: Will be filled in after execution.\n"
+                    "- DO NOT include explanations, markdown (e.g., ```), emojis, or extra text.\n"
+                    "- Action must be a single-line shell command (no code blocks).\n"
 )
             },
             {"role": "user", "content": f"The task is: {task_description} for repository {repo_name}."},

@@ -9,7 +9,7 @@ import re
 from backend.services.state import approval_channels
 
 class AgentOrchestrator:
-    def __init__(self, model_name="deepseek-coder-v2"):
+    def __init__(self, model_name="qwen2.5-coder:7b"):
         self.reasoning_agent = ReasoningAgent(model_name)
         self.prompt_engineer = PromptEngineerAgent(model_name)
         self.reflector_agent = ReflectorAgent(model_name)

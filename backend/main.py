@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uuid
 from backend.services.agent_orchestrator import AgentOrchestrator
-from backend.services.agent_executor import cancel_execution
+from backend.services.agent_orchestrator import cancel_execution
 from backend.services.state import approval_channels
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse

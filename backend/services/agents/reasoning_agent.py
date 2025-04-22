@@ -17,7 +17,6 @@ class ReasoningAgent:
                     "- Action: Provide ONE shell command to execute (e.g., git, mkdir, etc.) and wait for approval before continuing.\n"
                     "- Result: Fill this in only after the Action has been approved, executed, and output is known.\n"
                     "Rules:\n"
-                    f"After cloning you are inside You are already in the the './repos' directory, so you have to do cd repo_name: {repo_name}.\n"
                     "- ✅ FIRST: Always check if the task is already completed. If yes, immediately respond with: Final Answer: <task is done explanation>"
                     f"- Start by cloning the repo using: git clone https://github.com/eugenius0/{repo_name}.git\n"
                     f"- The repository is cloned into the './repos/{repo_name}' directory.\n"

@@ -6,7 +6,7 @@ import uuid
 import os
 import subprocess
 import re
-from backend.services.state import approval_channels
+from backend.services.state import approval_channels, cancelled_tasks
 
 class AgentOrchestrator:
     def __init__(self, model_name="qwen2.5-coder:7b"):
@@ -167,21 +167,14 @@ def _process_command_line(line, inside_code_block, command_lines):
 
 def execute_action(command: str, repo_name: str) -> str:
     """Executes a shell command using the proper working directory."""
-    base_dir = "./repos"
+    base_dir = "./reposss"
     os.makedirs(base_dir, exist_ok=True)
 
-    # Handle 'cd repo_name && ...' pattern
-    cd_prefix = f"cd {repo_name} && "
-    if command.startswith(cd_prefix):
-        command = command[len(cd_prefix):].strip()
-        cwd = os.path.join(base_dir, repo_name)
-    elif command.startswith("git clone"):
-        cwd = base_dir
-    else:
-        cwd = base_dir  # Default fallback
+    is_clone = command.strip().startswith("git clone")
+    cwd = base_dir if is_clone else os.path.join(base_dir, repo_name)
 
-    if not os.path.exists(cwd):
-        return f"❌ Error: Working directory does not exist: {cwd}"
+    if not is_clone and not os.path.exists(cwd):
+        return f"❌ Error: Repository directory does not exist: {cwd}"
 
     try:
         result = subprocess.run(
@@ -194,3 +187,7 @@ def execute_action(command: str, repo_name: str) -> str:
     except subprocess.CalledProcessError as e:
         return f"❌ Command execution error:\n{str(e)}"
 
+
+def cancel_execution():
+    """Cancel all pending approval tasks."""
+    cancelled_tasks.update(approval_channels.keys())

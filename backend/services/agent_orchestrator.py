@@ -167,7 +167,7 @@ def _process_command_line(line, inside_code_block, command_lines):
 
 def execute_action(command: str, repo_name: str) -> str:
     """Executes a shell command using the proper working directory."""
-    base_dir = "./reposss"
+    base_dir = "./repos"
     os.makedirs(base_dir, exist_ok=True)
 
     is_clone = command.strip().startswith("git clone")

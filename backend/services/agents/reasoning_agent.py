@@ -19,7 +19,7 @@ class ReasoningAgent:
                     "Rules:\n"
                     "- ✅ FIRST: Always check if the task is already completed. If yes, immediately respond with: Final Answer: <task is done explanation>"
                     f"- Start by cloning the repo using: git clone https://github.com/eugenius0/{repo_name}.git\n"
-                    f"- The repository is cloned into the './repos/{repo_name}' directory.\n"
+                    f"- The repository is cloned into the '{repo_name}' directory.\n"
                     f"- The Task: {task_description} is the task you need to accomplish.\n"
                     f"- Only continue with further steps if they are necessary to complete the task: {task_description}.\n"
                     "+ If you are deleting, editing, or modifying files, always check for their presence first."

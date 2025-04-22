@@ -90,7 +90,7 @@ class AgentOrchestrator:
 
             # 🧨 Execute the (possibly edited) action
             used_command = approval["edited_command"] or action
-            result = execute_action(used_command)
+            result = execute_action(used_command, repo_name)
             yield f"\n📄 Result: {result}"
             history.append({"role": "user", "content": f"Result: {result}"})
 
@@ -165,12 +165,23 @@ def _process_command_line(line, inside_code_block, command_lines):
             command_lines.append(stripped)
 
 
-def execute_action(command: str) -> str:
+def execute_action(command: str, repo_name: str) -> str:
     """Executes a shell command using the proper working directory."""
     base_dir = "./repos"
     os.makedirs(base_dir, exist_ok=True)
 
-    cwd = base_dir  # Always stay here, agent must cd <repo_name> manually
+    # Handle 'cd repo_name && ...' pattern
+    cd_prefix = f"cd {repo_name} && "
+    if command.startswith(cd_prefix):
+        command = command[len(cd_prefix):].strip()
+        cwd = os.path.join(base_dir, repo_name)
+    elif command.startswith("git clone"):
+        cwd = base_dir
+    else:
+        cwd = base_dir  # Default fallback
+
+    if not os.path.exists(cwd):
+        return f"❌ Error: Working directory does not exist: {cwd}"
 
     try:
         result = subprocess.run(
@@ -182,3 +193,4 @@ def execute_action(command: str) -> str:
             return f"❌ Command failed with error:\n{result.stderr.strip()}"
     except subprocess.CalledProcessError as e:
         return f"❌ Command execution error:\n{str(e)}"
+

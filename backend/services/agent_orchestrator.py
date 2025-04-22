@@ -90,7 +90,7 @@ class AgentOrchestrator:
 
             # 🧨 Execute the (possibly edited) action
             used_command = approval["edited_command"] or action
-            result = execute_action(used_command, repo_name)
+            result = execute_action(used_command)
             yield f"\n📄 Result: {result}"
             history.append({"role": "user", "content": f"Result: {result}"})
 
@@ -165,16 +165,12 @@ def _process_command_line(line, inside_code_block, command_lines):
             command_lines.append(stripped)
 
 
-def execute_action(command: str, repo_name: str) -> str:
+def execute_action(command: str) -> str:
     """Executes a shell command using the proper working directory."""
     base_dir = "./repos"
     os.makedirs(base_dir, exist_ok=True)
 
-    is_clone = command.strip().startswith("git clone")
-    cwd = base_dir if is_clone else os.path.join(base_dir, repo_name)
-
-    if not is_clone and not os.path.exists(cwd):
-        return f"❌ Error: Repository directory does not exist: {cwd}"
+    cwd = base_dir  # Always stay here, agent must cd <repo_name> manually
 
     try:
         result = subprocess.run(

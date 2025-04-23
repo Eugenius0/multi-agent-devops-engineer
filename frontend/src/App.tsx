@@ -400,7 +400,7 @@ export default function AutomationFrameworkUI() {
             aria-hidden="true"
           >
             <div
-              className="bg-white w-11/12 h-5/6 rounded-lg shadow-lg overflow-hidden relative flex flex-col"
+              className="bg-blue-100 w-11/12 h-5/6 rounded-lg shadow-lg overflow-hidden relative flex flex-col"
               onClick={(e) => e.stopPropagation()}
               aria-hidden="true"
               tabIndex={-1}
@@ -409,20 +409,74 @@ export default function AutomationFrameworkUI() {
               }}
             >
               {/* Sticky Header */}
-              <div className="sticky top-0 z-10 bg-white border-b border-gray-300 p-4 flex justify-between items-center">
-                <h3 className="text-xl font-bold">
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-300 px-4 py-3 flex items-center justify-between">
+                {/* Title on the left */}
+                <h3 className="text-xl font-bold flex-1 text-left">
                   📋 Fullscreen Execution Status
                 </h3>
-                <button
-                  className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700"
-                  onClick={() => setIsFullscreen(false)}
-                >
-                  Close
-                </button>
+
+                {/* Execute & Cancel buttons in the center */}
+                <div className="flex gap-3 items-center justify-center flex-1">
+                  <Button
+                    className={`text-white text-base font-medium px-5 py-2 rounded ${
+                      !command.trim() ||
+                      !repoName.trim() ||
+                      mutation.isPending ||
+                      isCancelling
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-black hover:bg-gray-800 focus:ring focus:ring-gray-500"
+                    }`}
+                    onClick={() =>
+                      mutation.mutate({ cmd: command, repo: repoName })
+                    }
+                    disabled={
+                      !command.trim() ||
+                      !repoName.trim() ||
+                      mutation.isPending ||
+                      isCancelling
+                    }
+                  >
+                    {mutation.isPending || isCancelling
+                      ? "Processing..."
+                      : "Execute"}
+                  </Button>
+
+                  <Button
+                    className={`text-white text-base font-medium px-5 py-2 rounded ${
+                      isCancelling
+                        ? "bg-yellow-500 cursor-wait"
+                        : isRunning
+                        ? "bg-red-600 hover:bg-red-700"
+                        : "bg-red-300 cursor-not-allowed"
+                    }`}
+                    onClick={handleCancel}
+                    disabled={!isRunning || isCancelling}
+                  >
+                    {isCancelling ? "Cancelling..." : "Cancel"}
+                  </Button>
+                </div>
+
+                {/* Close button on the right */}
+                <div className="flex-1 flex justify-end">
+                  <button
+                    className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700"
+                    onClick={() => setIsFullscreen(false)}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
 
               {/* Scrollable Body */}
               <div className="flex-1 overflow-y-auto p-6">
+                {(finalExecutionTime || isRunning) && (
+                  <div className="mb-4 text-center text-gray-700 text-base font-medium">
+                    {finalExecutionTime
+                      ? `⏳ Total Execution Time: ${finalExecutionTime}`
+                      : `⏳ Execution Time: ${elapsedTime} seconds`}
+                  </div>
+                )}
+
                 <pre className="text-sm text-gray-800 whitespace-pre-wrap mb-6">
                   {executionStatus}
                   <div ref={logsEndRef} />

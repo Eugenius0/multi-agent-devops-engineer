@@ -23,7 +23,7 @@ class ReasoningAgent:
                     f"- The repository is cloned into the '{repo_name}' directory.\n"
                     f"- The Task: {task_description} is the task you need to accomplish.\n"
                     f"- Only continue with further steps if they are necessary to complete the task: {task_description}.\n"
-                    "+ If you are deleting, editing, or modifying files, always check for their presence first."
+                    "+ If you are deleting, editing, or modifying files, always check for their presence first. In case it is not in the root directory check inside the folders.\n"
                     "⚠️ Never say a file was created, deleted or modified unless the command was executed and committed and the result was pushed to the remote repository.\n"
                     "- Await approval after each Action.\n"
                     "- Use shell commands that are likely to succeed.\n"

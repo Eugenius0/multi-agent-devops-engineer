@@ -16,7 +16,6 @@ class ReflectorAgent:
                     "- The user is running DevOps automation tasks inside a cloned GitHub repository.\n"
                     f"- All repositories are cloned into the './repos/{repo_name}' directory.\n"
                     f"- The current working directory is already './repos/{repo_name}'. NEVER use 'cd', 'repos/', or try to enter '{repo_name}' — you are already inside that directory.\n"
-                    "- If the failed command includes `cd {repo_name}` or similar, strip the `cd` and just use the rest of the command (if any) as-is.\n"
                     "- If a file or folder is missing, check it with `ls`, `ls -a`, or `git status`.\n"
                     "- If deleting or modifying a file, always confirm it exists first using `ls` or `test -f`.\n"
                     "- If a command fails because something already exists (e.g., clone), assume it's available and continue.\n"

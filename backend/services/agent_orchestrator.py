@@ -28,11 +28,68 @@ class AgentOrchestrator:
                 "role": "user",
                 "content": f"The repository {repo_name} is already cloned locally into {repo_path}. You are already in the correct directory. DO NOT clone again or use 'cd'."
             })
-        else:
-            history.append({
-                "role": "user",
-                "content": f"The repository {repo_name} is NOT cloned yet. Start by cloning it using: git clone https://github.com/eugenius0/{repo_name}.git"
-            })
+                # Check if repo is behind origin/main
+            try:
+                result = subprocess.run(
+                    ["git", "remote", "update"],
+                    cwd=repo_path,
+                    capture_output=True,
+                    text=True
+                )
+
+                rev_list = subprocess.run(
+                    ["git", "rev-list", "HEAD...origin/main", "--count"],
+                    cwd=repo_path,
+                    capture_output=True,
+                    text=True
+                )
+
+                if rev_list.returncode == 0 and rev_list.stdout.strip() != "0":
+                    history.append({
+                        "role": "user",
+                        "content": f"The local repository {repo_name} is out of sync with origin/main. Automatically pulling latest changes..."
+                    })
+
+                    try:
+                        pull_result = subprocess.run(
+                            ["git", "pull", "origin", "main"],
+                            cwd=repo_path,
+                            capture_output=True,
+                            text=True
+                        )
+                        if pull_result.returncode == 0:
+                            history.append({
+                                "role": "user",
+                                "content": f"✅ Successfully pulled latest changes:\n{pull_result.stdout.strip()}"
+                            })
+                        else:
+                            history.append({
+                                "role": "user",
+                                "content": f"❌ Failed to pull latest changes:\n{pull_result.stderr.strip()}"
+                            })
+                    except Exception as e:
+                        history.append({
+                            "role": "user",
+                            "content": f"❌ Exception while pulling latest changes: {str(e)}"
+                        })
+
+                else:
+                    history.append({
+                        "role": "user",
+                        "content": f"The local repository {repo_name} is up to date with origin/main."
+                    })
+
+            except Exception as e:
+                history.append({
+                    "role": "user",
+                    "content": f"⚠️ Failed to check sync status for {repo_name}. Reason: {str(e)}"
+                })
+
+            else:
+                history.append({
+                    "role": "user",
+                    "content": f"The repository {repo_name} is NOT cloned yet. Start by cloning it using: git clone https://github.com/eugenius0/{repo_name}.git"
+                })
 
 
 

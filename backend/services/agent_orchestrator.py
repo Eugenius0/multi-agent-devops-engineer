@@ -85,11 +85,11 @@ class AgentOrchestrator:
                     "content": f"⚠️ Failed to check sync status for {repo_name}. Reason: {str(e)}"
                 })
 
-            else:
-                history.append({
-                    "role": "user",
-                    "content": f"The repository {repo_name} is NOT cloned yet. Start by cloning it using: git clone https://github.com/eugenius0/{repo_name}.git"
-                })
+        else:
+            history.append({
+                "role": "user",
+                "content": f"The repository {repo_name} is NOT cloned yet. Start by cloning it using: git clone https://github.com/eugenius0/{repo_name}.git" #hardcoded username
+            })
 
 
 

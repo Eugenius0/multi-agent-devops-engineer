@@ -3,6 +3,7 @@ import { Button, Input } from "@headlessui/react";
 import { useMutation } from "@tanstack/react-query";
 import { Maximize } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 export default function AutomationFrameworkUI() {
   const [command, setCommand] = useState("");
@@ -278,7 +279,14 @@ export default function AutomationFrameworkUI() {
             isCancelling
           }
         >
-          {mutation.isPending || isCancelling ? "Processing..." : "Execute"}
+          {mutation.isPending || isCancelling ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Processing...
+            </div>
+          ) : (
+            "Execute"
+          )}
         </Button>
 
         <Button
@@ -436,9 +444,14 @@ export default function AutomationFrameworkUI() {
                       isCancelling
                     }
                   >
-                    {mutation.isPending || isCancelling
-                      ? "Processing..."
-                      : "Execute"}
+                    {mutation.isPending || isCancelling ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
+                      </div>
+                    ) : (
+                      "Execute"
+                    )}
                   </Button>
 
                   <Button

@@ -1,11 +1,12 @@
 import logging
 import ollama
 
+
 class ReasoningAgent:
     def __init__(self, model_name):
         self.model_name = model_name
         self.llm = ollama  # or whatever you're using to call the model
-        
+
     def build_prompt(self, task_description, repo_name, history):
         return [
             {
@@ -19,7 +20,7 @@ class ReasoningAgent:
                     "Rules:\n"
                     f"- ❌ ABSOLUTELY FORBIDDEN: DO NOT run 'cd {repo_name}' — the system is already inside './repos/{repo_name}' after cloning. You MUST assume the working directory is already correct.\n"
                     "- ✅ FIRST: Always check if the task is already completed. If yes, immediately respond with: Final Answer: <task is done explanation>"
-                    f"- Start by cloning the repo using: git clone https://github.com/eugenius0/{repo_name}.git\n"
+                    f"- Start either by cloning the repo using: https://gitlab.com/{repo_name}.git\n or using: git clone https://github.com/eugenius0/{repo_name}.git\n or if its a gitlab repo"
                     f"- The repository is cloned into the '{repo_name}' directory.\n"
                     f"- The Task: {task_description} is the task you need to accomplish.\n"
                     f"- Only continue with further steps if they are necessary to complete the task: {task_description}.\n"
@@ -44,9 +45,12 @@ class ReasoningAgent:
                     "  Result: Will be filled in after execution.\n"
                     "- DO NOT include explanations, markdown (e.g., ```), emojis, or extra text.\n"
                     "- Action must be a single-line shell command (no code blocks).\n"
-)
+                ),
             },
-            {"role": "user", "content": f"The task is: {task_description} for repository {repo_name}."},
+            {
+                "role": "user",
+                "content": f"The task is: {task_description} for repository {repo_name}.",
+            },
         ] + history
 
     async def think(self, task_description, repo_name, history):
@@ -54,4 +58,3 @@ class ReasoningAgent:
         messages = self.build_prompt(task_description, repo_name, history)
         response = self.llm.chat(model=self.model_name, messages=messages)
         return response["message"]["content"]
-

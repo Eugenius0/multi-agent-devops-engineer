@@ -22,6 +22,7 @@ class AgentOrchestrator:
 
         refined_input = await self.prompt_engineer.refine(user_input)
         yield f"\n🧠 Refined Task: {refined_input}"
+        yield "\n"
 
         repo_path = f"./repos/{repo_name}"
         if os.path.exists(repo_path):
@@ -70,6 +71,7 @@ class AgentOrchestrator:
                                 }
                             )
                             yield f"\n📥 Auto-update: Pulled latest changes from origin/main for `{repo_name}`."
+                            yield "\n"
                         else:
                             history.append(
                                 {
@@ -124,6 +126,7 @@ class AgentOrchestrator:
                 and "Will be filled in after execution" not in thought_output
             ):
                 yield "\n⚠️ Warning: The agent hallucinated a Result. Retrying with corrected instruction..."
+                yield "\n"
 
                 history.append(
                     {
@@ -138,6 +141,7 @@ class AgentOrchestrator:
 
             yield f"\n🧠 {thought_output}"
             history.append({"role": "assistant", "content": thought_output})
+            yield "\n"
 
             # ✅ Check if task is complete
             if "Final Answer" in thought_output:
@@ -153,17 +157,21 @@ class AgentOrchestrator:
             step_id = str(uuid.uuid4())
             approval_channels[step_id] = approval_q
             yield f"\n[ApprovalRequired] {step_id} → {action}"
+            yield "\n"
             yield "\n⏸ Awaiting user approval..."
+            yield "\n"
 
             approval = await approval_q.get()
             if not approval["approved"]:
                 yield "\n❌ Action rejected by user. Asking Reflector Agent for an alternative..."
+                yield "\n"
 
                 # Ask reflector for a better version of the rejected command
                 rejected_command = approval["edited_command"] or action
                 recovery = await self.reflector_agent.suggest_fix(
                     rejected_command, "User rejected this action.", repo_name
                 )
+                yield "\n"
                 yield f"\n🔄 Reflector Agent Suggestion:\n{recovery}"
 
                 history.append(
@@ -178,6 +186,7 @@ class AgentOrchestrator:
             used_command = approval["edited_command"] or action
             result = execute_action(used_command, repo_name)
             yield f"\n📄 Result: {result}"
+            yield "\n"
             history.append({"role": "user", "content": f"Result: {result}"})
 
             # 🛠 If failed, ask ReflectorAgent to suggest a fix
@@ -185,6 +194,7 @@ class AgentOrchestrator:
                 recovery = await self.reflector_agent.suggest_fix(
                     action, result, repo_name
                 )
+                yield "\n"
                 yield f"\n🔄 Reflector Agent Suggestion:\n{recovery}"
                 history.append(
                     {

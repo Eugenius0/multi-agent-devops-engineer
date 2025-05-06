@@ -310,9 +310,25 @@ export default function AutomationFrameworkUI() {
               className="mt-6 p-3 bg-blue-100 border border-blue-300 rounded-lg shadow-sm max-h-60 overflow-y-auto"
             >
               <h3 className="text-lg font-semibold">Execution Status</h3>
-              <pre className="text-xs text-gray-700 whitespace-pre-wrap">
-                {executionStatus}
-              </pre>
+              <div className="text-xs text-gray-700 whitespace-pre-wrap font-mono space-y-1">
+                <AnimatePresence initial={false}>
+                  {executionStatus
+                    .split("\n")
+                    .filter((line) => line.trim() !== "")
+                    .map((line, index) => (
+                      <motion.div
+                        key={line + index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        {line}
+                      </motion.div>
+                    ))}
+                </AnimatePresence>
+                <div ref={logsEndRef} />
+              </div>
               <div ref={logsEndRef} />
               <div className="mt-2 flex justify-end">
                 <button
@@ -490,10 +506,25 @@ export default function AutomationFrameworkUI() {
                   </div>
                 )}
 
-                <pre className="text-sm text-gray-800 whitespace-pre-wrap mb-6">
-                  {executionStatus}
+                <div className="text-xs text-gray-700 whitespace-pre-wrap font-mono space-y-1">
+                  <AnimatePresence initial={false}>
+                    {executionStatus
+                      .split("\n")
+                      .filter((line) => line.trim() !== "")
+                      .map((line, index) => (
+                        <motion.div
+                          key={line + index}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.4 }}
+                        >
+                          {line}
+                        </motion.div>
+                      ))}
+                  </AnimatePresence>
                   <div ref={logsEndRef} />
-                </pre>
+                </div>
 
                 {/* Pending Approval */}
                 {pendingApproval && (

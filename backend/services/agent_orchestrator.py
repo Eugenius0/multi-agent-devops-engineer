@@ -69,6 +69,7 @@ class AgentOrchestrator:
                                     "content": f"✅ Successfully pulled latest changes:\n{pull_result.stdout.strip()}",
                                 }
                             )
+                            yield f"\n📥 Auto-update: Pulled latest changes from origin/main for `{repo_name}`."
                         else:
                             history.append(
                                 {
@@ -140,7 +141,7 @@ class AgentOrchestrator:
 
             # ✅ Check if task is complete
             if "Final Answer" in thought_output:
-                yield "\n✅ Task complete."
+                yield "\n🎉 All steps executed."
                 break
 
             # ❌ Handle missing action

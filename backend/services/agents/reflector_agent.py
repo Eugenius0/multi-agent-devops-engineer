@@ -1,10 +1,13 @@
 import ollama
 
+from backend.llms.claude_llm import ClaudeLLM
+
+
 class ReflectorAgent:
-    def __init__(self, model_name):
+    def __init__(self, model_name=None):
         self.model_name = model_name
-        self.llm = ollama
-        
+        self.llm = ClaudeLLM()
+
     def build_prompt(self, action, repo_name, error_output):
         return [
             {
@@ -26,7 +29,7 @@ class ReflectorAgent:
                     "- Only output one valid shell command OR a short sequential fallback (e.g. check then delete).\n"
                     "- Do NOT provide explanations.\n"
                     "- Output format: Action: <your new shell command(s)>"
-                )
+                ),
             },
             {
                 "role": "user",
@@ -37,11 +40,10 @@ class ReflectorAgent:
                     f"Repository: {repo_name}\n\n"
                     "Your task is to suggest a better shell command that resolves the issue.\n"
                     "If the issue is context-related or unclear, you may propose a quick check using 'ls', 'git status', or 'test -f' to investigate."
-                )
-            }
+                ),
+            },
         ]
 
     async def suggest_fix(self, action, repo_name, error_output):
         messages = self.build_prompt(action, repo_name, error_output)
-        response = self.llm.chat(model=self.model_name, messages=messages)
-        return response["message"]["content"]
+        return await self.llm.chat(messages)

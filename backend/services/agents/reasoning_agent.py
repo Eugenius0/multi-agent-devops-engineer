@@ -1,11 +1,15 @@
 import logging
 import ollama
 
+from backend.llms.claude_llm import ClaudeLLM
+
 
 class ReasoningAgent:
-    def __init__(self, model_name):
+    def __init__(self, model_name=None):
         self.model_name = model_name
-        self.llm = ollama  # or whatever you're using to call the model
+        self.llm = (
+            ClaudeLLM()
+        )  # or whatever you're using to call the model, used "ollama" before
 
     def build_prompt(self, task_description, repo_name, history):
         return [
@@ -56,5 +60,4 @@ class ReasoningAgent:
     async def think(self, task_description, repo_name, history):
         logging.info(f"ReasoningAgent initialized with repo: {repo_name}")
         messages = self.build_prompt(task_description, repo_name, history)
-        response = self.llm.chat(model=self.model_name, messages=messages)
-        return response["message"]["content"]
+        return await self.llm.chat(messages)

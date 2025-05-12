@@ -1,10 +1,13 @@
 import ollama
 
+from backend.llms.claude_llm import ClaudeLLM
+
+
 class PromptEngineerAgent:
-    def __init__(self, model_name):
+    def __init__(self, model_name=None):
         self.model_name = model_name
-        self.llm = ollama
-        
+        self.llm = ClaudeLLM()
+
     def build_prompt(self, user_input):
         return [
             {
@@ -26,15 +29,14 @@ class PromptEngineerAgent:
                     "- Output: 'Set up a GitHub Actions workflow that runs tests and builds the app on push to main.'\n\n"
                     "- Input: 'I want to dockerize it'\n"
                     "- Output: 'Generate a Dockerfile and docker-compose.yaml for the current app.'"
-                )
+                ),
             },
             {
                 "role": "user",
-                "content": f"Original user input: {user_input}\nRefactor it into a clean and precise DevOps instruction."
-            }
+                "content": f"Original user input: {user_input}\nRefactor it into a clean and precise DevOps instruction.",
+            },
         ]
 
     async def refine(self, user_input):
         messages = self.build_prompt(user_input)
-        response = self.llm.chat(model=self.model_name, messages=messages)
-        return response["message"]["content"]
+        return await self.llm.chat(messages)

@@ -14,8 +14,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow requests from any frontend (can be restricted later)
     allow_credentials=True,
-    allow_methods=["*"], # Allow all HTTP methods (POST, GET, etc.)
-    allow_headers=["*"], # Allow all headers
+    allow_methods=["*"],  # Allow all HTTP methods (POST, GET, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
 
 # Store task statuses and LLM output history
@@ -25,14 +25,17 @@ llm_outputs = {}
 # Instantiate orchestrator
 orchestrator = AgentOrchestrator()
 
+
 class UserRequest(BaseModel):
     user_input: str
     repo_name: str
+
 
 class ApprovalRequest(BaseModel):
     task_id: str
     approved: bool
     edited_command: str | None = None  # Allow user-edited command
+
 
 @app.post("/run-automation")
 async def run_automation(request: UserRequest):
@@ -40,7 +43,9 @@ async def run_automation(request: UserRequest):
     repo_name = request.repo_name.strip()
 
     if not user_input or not repo_name:
-        raise HTTPException(status_code=400, detail="User input and repo name are required")
+        raise HTTPException(
+            status_code=400, detail="User input and repo name are required"
+        )
 
     task_id = str(uuid.uuid4())
     task_status[task_id] = "Running"
@@ -57,17 +62,22 @@ async def run_automation(request: UserRequest):
 
     return StreamingResponse(log_stream(), media_type="text/event-stream")
 
+
 @app.post("/approve-action")
 async def approve_action(request: ApprovalRequest):
     task_id = request.task_id
     if task_id not in approval_channels:
-        raise HTTPException(status_code=404, detail="Task ID not found or already processed.")
+        raise HTTPException(
+            status_code=404, detail="Task ID not found or already processed."
+        )
 
     # 🧠 Put approval response directly into the channel
-    await approval_channels[task_id].put({
-        "approved": request.approved,
-        "edited_command": request.edited_command,
-    })
+    await approval_channels[task_id].put(
+        {
+            "approved": request.approved,
+            "edited_command": request.edited_command,
+        }
+    )
 
     return {
         "status": "acknowledged",
@@ -81,12 +91,13 @@ async def approve_action(request: ApprovalRequest):
 async def get_llm_output(task_id: str):
     """Optional: Retrieve raw LLM output if you choose to store it."""
     if task_id not in llm_outputs:
-        raise HTTPException(status_code=404, detail="Task ID not found or no LLM output available.")
+        raise HTTPException(
+            status_code=404, detail="Task ID not found or no LLM output available."
+        )
     return {"llm_output": llm_outputs[task_id]}
+
 
 @app.post("/cancel-automation")
 async def cancel_automation():
     cancel_execution()
     return {"message": "Automation cancelled"}
-
-

@@ -32,7 +32,7 @@ class ReasoningAgent:
                     "⚠️ Never say a file was created, deleted or modified unless the command was executed and committed and the result was pushed to the remote repository.\n"
                     "- Await approval after each Action.\n"
                     "- Use shell commands that are likely to succeed.\n"
-                    "- Use `echo` or `touch` instead of interactive editors like nano.\n"
+                    "- Do NOT use `nano`, `vi`, or `cat <<EOF`. Instead, ALWAYS write file content with: `echo '<single-line content>' > filename`. If writing multiple lines, use this safe pattern: `echo -e 'line1\nline2\n...' > filename`. NEVER forget to escape single quotes and special characters."
                     "- Always put the shell command on the **same line** as 'Action:' (do NOT use Markdown code blocks).\n"
                     "- Never generate a Result line until the command has actually been executed. Use: Result: Will be filled in after execution. as a placeholder."
                     "- Whatever gets pushed such as a pipeline should work out-of-the-box without requiring manual edits"

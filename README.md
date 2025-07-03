@@ -27,6 +27,18 @@ npm start
 
 This launches the React UI on [http://localhost:3000](http://localhost:3000)
 
+## 🔐 Environment Variables
+
+To use the system, you must provide a valid Claude Sonnet API key.
+
+Create a `.env` file in the root of the project with the following content:
+
+```env
+CLAUDE_API_KEY=your_api_key_here
+```
+
+The .env file is excluded from version control via .gitignore, so each developer must create it manually before running the backend.
+
 ### 2. Start the Backend
 
 In a separate terminal, from the **project root folder**, run:
